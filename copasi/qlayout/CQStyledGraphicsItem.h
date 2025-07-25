@@ -19,17 +19,32 @@ class CLGraphicalObject;
 class CLStyle;
 class CLRenderResolver;
 class QMouseEvent;
-class CQStyledGraphicsItem : public QObject, public CQCopasiGraphicsItem, public QGraphicsItemGroup
+class CQStyledGraphicsItem : public QObject
+  , public CQCopasiGraphicsItem
+  , public QGraphicsItemGroup
 {
   Q_OBJECT
 public:
-  CQStyledGraphicsItem(const CLGraphicalObject* go, const CLRenderResolver* resolver = NULL);
+  CQStyledGraphicsItem(const CLGraphicalObject * go, const CLRenderResolver * resolver = NULL);
   virtual ~CQStyledGraphicsItem();
+
+  void setLocked(bool locked)
+  {
+    mLocked = locked;
+    update();
+  }
+  bool isLocked() const
+  {
+    return mLocked;
+  }
+
 protected:
-  void mouseReleaseEvent(QGraphicsSceneMouseEvent* event);
-  virtual QVariant itemChange(GraphicsItemChange change, const QVariant &value);
+  void contextMenuEvent(QGraphicsSceneContextMenuEvent * event);
+  void mouseReleaseEvent(QGraphicsSceneMouseEvent * event);
+  virtual QVariant itemChange(GraphicsItemChange change, const QVariant & value);
 
   bool mWasMoved;
+  bool mLocked = false;
 };
 
 #endif
