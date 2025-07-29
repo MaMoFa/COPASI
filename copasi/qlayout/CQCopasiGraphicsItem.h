@@ -26,10 +26,18 @@ public:
   void setStyle(const CLStyle* style);
   const CLStyle* getStyle() const;
   bool isValid() const;
+
+  bool isLocked() const
+  {
+    return mLocked;
+  }
+
 protected:
   const CLStyle* mpStyle;
   const CLRenderResolver* mpResolver;
   bool mIsValid;
+  bool mLocked;
+
 };
 
 #endif

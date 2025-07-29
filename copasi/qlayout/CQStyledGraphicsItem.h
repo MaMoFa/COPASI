@@ -28,15 +28,8 @@ public:
   CQStyledGraphicsItem(const CLGraphicalObject * go, const CLRenderResolver * resolver = NULL);
   virtual ~CQStyledGraphicsItem();
 
-  void setLocked(bool locked)
-  {
-    mLocked = locked;
-    update();
-  }
-  bool isLocked() const
-  {
-    return mLocked;
-  }
+  void setLocked(bool locked);
+
 
 protected:
   void contextMenuEvent(QGraphicsSceneContextMenuEvent * event);
@@ -44,7 +37,6 @@ protected:
   virtual QVariant itemChange(GraphicsItemChange change, const QVariant & value);
 
   bool mWasMoved;
-  bool mLocked = false;
 };
 
 #endif

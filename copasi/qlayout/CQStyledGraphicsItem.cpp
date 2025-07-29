@@ -62,12 +62,18 @@ void CQStyledGraphicsItem::contextMenuEvent(QGraphicsSceneContextMenuEvent * eve
 
   if (selectedAction == lockAction)
     {
-      mLocked = !mLocked;
-      update();
-      setFlag(QGraphicsItem::ItemIsMovable, !mLocked);
+      setLocked(!mLocked);    
     }
 
   event->accept();}
+
+void CQStyledGraphicsItem::setLocked(bool locked)
+  {
+  mLocked = locked;
+  setFlag(QGraphicsItem::ItemIsMovable, !mLocked);
+  update();
+}
+
 
 void CQStyledGraphicsItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 {
