@@ -217,13 +217,19 @@ void CQConnectionGraphicsItem::contextMenuEvent(QGraphicsSceneContextMenuEvent *
 
   if (selectedAction == lockAction)
     {
-      mLocked = !mLocked;
-      update();
-      setFlag(QGraphicsItem::ItemIsMovable, !mLocked);
+      setLocked(!mLocked);
     }
 
   event->accept();
 }
+
+void CQConnectionGraphicsItem::setLocked(bool locked)
+  {
+  mLocked = locked;
+  setFlag(QGraphicsItem::ItemIsMovable, !mLocked);
+  update();
+}
+
 
 CQConnectionGraphicsItem::~CQConnectionGraphicsItem()
 {
