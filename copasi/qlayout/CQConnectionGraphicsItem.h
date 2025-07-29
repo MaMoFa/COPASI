@@ -29,6 +29,15 @@ class CQConnectionGraphicsItem : public QObject, public CQCopasiGraphicsItem, pu
 {
   Q_OBJECT
 public:
+  void setLocked(bool locked)
+  {
+    mLocked = locked;
+    update();
+  }
+  bool isLocked() const
+  {
+    return mLocked;
+  }
   CQConnectionGraphicsItem(const CLGlyphWithCurve* glyph, const CLRenderResolver* resolver = NULL);
   virtual ~CQConnectionGraphicsItem();
   static QSharedPointer<QPainterPath> getPath(const CLCurve& curve);
@@ -36,10 +45,12 @@ public:
   void setUseFullShape(bool useFullShape);
 protected:
   virtual void paint(QPainter *painter, const QStyleOptionGraphicsItem *option = new QStyleOptionGraphicsItem() , QWidget *widget = 0);
+  void contextMenuEvent(QGraphicsSceneContextMenuEvent * event);
   void mouseReleaseEvent(QGraphicsSceneMouseEvent* event);
   virtual QVariant itemChange(GraphicsItemChange change, const QVariant &value);
   bool mWasMoved;
   bool mUseFullShape;
+  bool mLocked = false;
   QPainterPath mShape;
   QPainterPath mFullShape;
 };

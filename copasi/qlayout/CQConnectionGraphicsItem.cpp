@@ -14,6 +14,11 @@
 // All rights reserved.
 
 #include <QPainter>
+#include <QBrush>
+#include <QMenu>
+#include <QAction>
+#include <QGraphicsSceneContextMenuEvent>
+
 
 #include <copasi/qlayout/CQConnectionGraphicsItem.h>
 #include <copasi/qlayout/CQStyledGraphicsItem.h>
@@ -111,6 +116,12 @@ CQConnectionGraphicsItem::CQConnectionGraphicsItem(const CLGlyphWithCurve* curve
 {
   setFlag(QGraphicsItem::ItemIsMovable);
   setFlag(QGraphicsItem::ItemSendsGeometryChanges);
+  setAcceptHoverEvents(true);
+  setAcceptedMouseButtons(Qt::RightButton);
+
+  QString type;
+  setData(Qt::UserRole + 1, type);
+
   setData(COPASI_LAYOUT_KEY, QString(curveGlyph->getKey().c_str()));
 
   QSharedPointer<QPainterPath> path = getPath(curveGlyph->getCurve());
@@ -193,6 +204,25 @@ CQConnectionGraphicsItem::CQConnectionGraphicsItem(const CLGlyphWithCurve* curve
     addToGroup(itemGroup);
   else
     delete itemGroup;
+}
+
+void CQConnectionGraphicsItem::contextMenuEvent(QGraphicsSceneContextMenuEvent * event)
+{
+  QMenu menu;
+  QAction * lockAction = nullptr;
+
+  lockAction = menu.addAction(mLocked ? "Unlock" : "Lock");
+
+  QAction * selectedAction = menu.exec(event->screenPos());
+
+  if (selectedAction == lockAction)
+    {
+      mLocked = !mLocked;
+      update();
+      setFlag(QGraphicsItem::ItemIsMovable, !mLocked);
+    }
+
+  event->accept();
 }
 
 CQConnectionGraphicsItem::~CQConnectionGraphicsItem()

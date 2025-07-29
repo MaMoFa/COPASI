@@ -458,3 +458,17 @@ void CQLayoutScene::updatePosition(const QString& key, const QPointF& newPos)
 
   emit recreateNeeded();
 }
+
+//void CQLayoutScene::updateLock(const QString& key, const QPointF& Locker)
+//{
+//  CKeyFactory * kf = CRootContainer::getKeyFactory();
+//
+//  if (kf == nullptr) return;
+//
+//  CLGraphicalObject * obj = dynamic_cast< CLGraphicalObject * >(kf->get(key.toStdString()));
+//
+//  if (obj == NULL) return;
+//
+//
+//    }
+//}

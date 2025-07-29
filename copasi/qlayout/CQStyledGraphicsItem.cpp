@@ -36,22 +36,15 @@ CQStyledGraphicsItem::CQStyledGraphicsItem(const CLGraphicalObject* go, const CL
   setFlag(QGraphicsItem::ItemIsMovable);
   setFlag(QGraphicsItem::ItemIsSelectable);
   setFlag(QGraphicsItem::ItemSendsGeometryChanges);
+  
   setAcceptHoverEvents(true);
   setAcceptedMouseButtons(Qt::RightButton);
   setData(COPASI_LAYOUT_KEY, QString(go->getKey().c_str()));
 
   QString type;
-  //if (dynamic_cast< const CLReactionGlyph * >(go))
-  //  type = "reaction";
-  //else if (dynamic_cast< const CLMetabGlyph * >(go))
-  //  type = "species";
   setData(Qt::UserRole + 1, type);
 
   CQRenderConverter::fillGroupFromStyle(this, &go->getBoundingBox(), mpStyle, mpResolver);
- /* for (QGraphicsItem * child : childItems())
-    {
-      child->setData(Qt::UserRole + 1, type);
-    }*/
 }
 
 CQStyledGraphicsItem::~CQStyledGraphicsItem()
@@ -60,40 +53,21 @@ CQStyledGraphicsItem::~CQStyledGraphicsItem()
 
 void CQStyledGraphicsItem::contextMenuEvent(QGraphicsSceneContextMenuEvent * event)
 {
-  QGraphicsItem * parent = parentItem();
-  if (parent)
-    {
-      // Delegiere an das Eltern-Item (z. B. CQStyledGraphicsItem)
-      // QApplication::sendEvent(parent, event);
-    }
-   QString type = data(Qt::UserRole + 1).toString();
-  qDebug() << "Kontextmenü für Typ:" << type;
-  qDebug() << "Item bounding rect: " << boundingRect();
-  qDebug() << "Right click received at:" << event->scenePos();
-
   QMenu menu;
   QAction * lockAction = nullptr;
 
-  if (type == "species" || type == "reaction")
-    {
-      lockAction = menu.addAction(mLocked ? "Unlock" : "Lock");
-    }
-  else
-    {
-      menu.addAction("Kein Kontextmenü für Typ: " + type);
-    }
-
+  lockAction = menu.addAction(mLocked ? "Unlock" : "Lock");
+ 
   QAction * selectedAction = menu.exec(event->screenPos());
 
   if (selectedAction == lockAction)
     {
       mLocked = !mLocked;
-      update(); // optional visuelles Feedback
-      qDebug() << (mLocked ? "Gesperrt" : "Entsperrt");
+      update();
+      setFlag(QGraphicsItem::ItemIsMovable, !mLocked);
     }
 
-  event->accept();
-}
+  event->accept();}
 
 void CQStyledGraphicsItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 {

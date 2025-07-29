@@ -62,10 +62,19 @@ protected:
   std::string mObjectRole;
 
   CLBoundingBox mBBox;
+  bool mLocked;
 
   CLGraphicalObject(const CLGraphicalObject & src);
 
 public:
+  bool isLocked() const
+{
+  return mLocked;
+}
+void setLocked(bool locked)
+{
+  mLocked = locked;
+}
   /**
    * Static method to create a CDataObject based on the provided data
    * @param const CData & data
