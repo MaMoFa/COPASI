@@ -46,6 +46,7 @@ public:
   CLayout* getCurrentLayout();
   const CLRenderInformationBase* getCurrentRenderInfo() const;
   void updatePosition(const QString& key, const QPointF& newPos);
+  void updateLock(const QString & key, bool locked);
 public slots:
   void recreate();
 signals:

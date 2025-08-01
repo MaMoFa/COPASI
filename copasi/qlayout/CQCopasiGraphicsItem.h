@@ -35,6 +35,15 @@ public:
   {
     return mShow;
   }
+  void setLocked(bool locked)
+  {
+    mLocked = locked;
+  }
+
+  void setShow(bool show)
+  {
+    mShow = show;
+  }
 
 protected:
   const CLStyle* mpStyle;

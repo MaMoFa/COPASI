@@ -68,12 +68,14 @@ bool CLGraphicalObject::applyData(const CData & data, CUndoData::CChangeSet & ch
 
 CLGraphicalObject::CLGraphicalObject(const std::string & name,
                                      const CDataContainer * pParent)
-  : CLBase(),
-    CDataContainer(name, pParent, "LayoutElement"),
-    mKey(CRootContainer::getKeyFactory()->add("Layout", this)),
-    mModelObjectKey(""),
-    mObjectRole(""),
-    mBBox()
+  : CLBase()
+  , CDataContainer(name, pParent, "LayoutElement")
+  , mKey(CRootContainer::getKeyFactory()->add("Layout", this))
+  , mModelObjectKey("")
+  , mObjectRole("")
+  , mBBox()
+  , mLocked(false)
+  , mShow(false)
 {};
 
 CLGraphicalObject::CLGraphicalObject(const CLGraphicalObject & src,
@@ -83,7 +85,9 @@ CLGraphicalObject::CLGraphicalObject(const CLGraphicalObject & src,
     mKey(CRootContainer::getKeyFactory()->add("Layout", this)),
     mModelObjectKey(src.mModelObjectKey),
     mObjectRole(src.mObjectRole),
-    mBBox(src.mBBox)
+    mBBox(src.mBBox),
+    mLocked(src.mLocked),
+    mShow(src.mShow)
 {};
 
 CLGraphicalObject::CLGraphicalObject(const GraphicalObject & sbml,
@@ -92,8 +96,9 @@ CLGraphicalObject::CLGraphicalObject(const GraphicalObject & sbml,
   : CLBase(sbml),
     CDataContainer(sbml.getId(), pParent, "LayoutElement"),
     mKey(CRootContainer::getKeyFactory()->add("Layout", this)),
-    mModelObjectKey(""),
-    mBBox(*sbml.getBoundingBox())
+    mModelObjectKey(""), mBBox(*sbml.getBoundingBox())
+  , mLocked(false)
+  , mShow(false)
 {
   RenderGraphicalObjectPlugin* rgoPlugin = (RenderGraphicalObjectPlugin*) sbml.getPlugin("render");
 
@@ -124,6 +129,8 @@ CLGraphicalObject & CLGraphicalObject::operator= (const CLGraphicalObject & rhs)
   mModelObjectKey = rhs.mModelObjectKey;
   this->mObjectRole = rhs.mObjectRole;
   mBBox = rhs.mBBox;
+  mLocked = rhs.mLocked;
+  mShow = rhs.mShow;
 
   return *this;
 }

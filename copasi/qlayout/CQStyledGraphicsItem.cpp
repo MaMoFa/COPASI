@@ -42,6 +42,7 @@ CQStyledGraphicsItem::CQStyledGraphicsItem(const CLGraphicalObject* go, const CL
   setData(COPASI_LAYOUT_KEY, QString(go->getKey().c_str()));
 
   QString type;
+  mLocked = go->isLocked();
   setData(Qt::UserRole + 1, type);
 
   CQRenderConverter::fillGroupFromStyle(this, &go->getBoundingBox(), mpStyle, mpResolver);
@@ -68,9 +69,11 @@ void CQStyledGraphicsItem::contextMenuEvent(QGraphicsSceneContextMenuEvent * eve
   event->accept();}
 
 void CQStyledGraphicsItem::setLocked(bool locked)
-  {
+{
   mLocked = locked;
   setFlag(QGraphicsItem::ItemIsMovable, !mLocked);
+  CQLayoutScene * currentScene = dynamic_cast< CQLayoutScene * >(scene());
+  currentScene->updateLock(data(COPASI_LAYOUT_KEY).toString(), mLocked);
   update();
 }
 

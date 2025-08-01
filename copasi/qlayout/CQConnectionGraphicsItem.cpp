@@ -123,6 +123,7 @@ CQConnectionGraphicsItem::CQConnectionGraphicsItem(const CLGlyphWithCurve* curve
   setData(Qt::UserRole + 1, type);
 
   setData(COPASI_LAYOUT_KEY, QString(curveGlyph->getKey().c_str()));
+  mLocked = curveGlyph->isLocked();
 
   QSharedPointer<QPainterPath> path = getPath(curveGlyph->getCurve());
   mShape.addPath(*path);
