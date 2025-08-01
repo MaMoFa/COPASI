@@ -63,6 +63,8 @@ protected:
 
   CLBoundingBox mBBox;
   bool mLocked;
+  bool mShow;
+
 
   CLGraphicalObject(const CLGraphicalObject & src);
 
@@ -74,6 +76,14 @@ public:
 void setLocked(bool locked)
 {
   mLocked = locked;
+}
+bool isShow() const
+{
+  return mShow;
+}
+void setShow(bool show)
+{
+  mShow = show;
 }
   /**
    * Static method to create a CDataObject based on the provided data

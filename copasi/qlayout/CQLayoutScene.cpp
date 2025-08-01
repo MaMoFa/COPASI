@@ -214,6 +214,18 @@ void CQLayoutScene::addGlyph(const CLGraphicalObject* go)
 
   if (item != NULL)
     {
+      QString cn = QString::fromStdString(go->getKey());
+      auto it = mItemStates.find(cn);
+
+      if (it != mItemStates.end())
+        {
+          const ItemState & state = it->first;
+          CLGraphicalObject * nonConstGo = const_cast< CLGraphicalObject * >(go);
+          nonConstGo->setLocked(state.locked);
+          nonConstGo->setShow(state.showHandles);
+
+        }
+
       CDataObject* obj = go->getModelObject();
 
       if (obj != NULL && text == NULL)
@@ -242,6 +254,22 @@ void CQLayoutScene::addGlyph(const CLGraphicalObject* go)
           ++it;
         }
     }
+}
+
+void CQLayoutScene::setItemLocked(const QString & key, bool locked)
+{
+  mItemStates[key].locked = locked;
+
+  if (auto item = dynamic_cast< CLGraphicalObject * >(CRootContainer::getKeyFactory()->get(key.toStdString())))
+    item->setLocked(locked);
+}
+
+void CQLayoutScene::setItemShowHandles(const QString & key, bool show)
+{
+  mItemStates[key].showHandles = show;
+
+  if (auto item = dynamic_cast< CLGraphicalObject * >(CRootContainer::getKeyFactory()->get(key.toStdString())))
+    item->setShow(!show);
 }
 
 QGraphicsItem* CQLayoutScene::getItemFor(const std::string& cn)
@@ -458,17 +486,3 @@ void CQLayoutScene::updatePosition(const QString& key, const QPointF& newPos)
 
   emit recreateNeeded();
 }
-
-//void CQLayoutScene::updateLock(const QString& key, const QPointF& Locker)
-//{
-//  CKeyFactory * kf = CRootContainer::getKeyFactory();
-//
-//  if (kf == nullptr) return;
-//
-//  CLGraphicalObject * obj = dynamic_cast< CLGraphicalObject * >(kf->get(key.toStdString()));
-//
-//  if (obj == NULL) return;
-//
-//
-//    }
-//}

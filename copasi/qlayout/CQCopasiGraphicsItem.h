@@ -31,13 +31,17 @@ public:
   {
     return mLocked;
   }
+  bool isShow() const
+  {
+    return mShow;
+  }
 
 protected:
   const CLStyle* mpStyle;
   const CLRenderResolver* mpResolver;
   bool mIsValid;
   bool mLocked;
-
+  bool mShow;
 };
 
 #endif

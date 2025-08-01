@@ -210,8 +210,10 @@ void CQConnectionGraphicsItem::contextMenuEvent(QGraphicsSceneContextMenuEvent *
 {
   QMenu menu;
   QAction * lockAction = nullptr;
+  QAction * showAction = nullptr;
 
   lockAction = menu.addAction(mLocked ? "Unlock" : "Lock");
+  showAction = menu.addAction(mShow ? "Show" : "Hide");
 
   QAction * selectedAction = menu.exec(event->screenPos());
 
@@ -219,6 +221,10 @@ void CQConnectionGraphicsItem::contextMenuEvent(QGraphicsSceneContextMenuEvent *
     {
       setLocked(!mLocked);
     }
+  if (selectedAction == showAction)
+  {
+      setShow(!mShow);
+  }
 
   event->accept();
 }
@@ -227,6 +233,12 @@ void CQConnectionGraphicsItem::setLocked(bool locked)
   {
   mLocked = locked;
   setFlag(QGraphicsItem::ItemIsMovable, !mLocked);
+  update();
+}
+
+void CQConnectionGraphicsItem::setShow(bool show)
+{
+  mShow = show;
   update();
 }
 
