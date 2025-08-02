@@ -20,7 +20,6 @@
 #include <QtCore/QSharedPointer>
 
 #include <string>
-#include <map>
 
 class CLayout;
 class CLGraphicalObject;
@@ -47,6 +46,7 @@ public:
   const CLRenderInformationBase* getCurrentRenderInfo() const;
   void updatePosition(const QString& key, const QPointF& newPos);
   void updateLock(const QString & key, bool locked);
+  void updateShow(const QString & kay, bool show);
 public slots:
   void recreate();
 signals:
@@ -56,15 +56,6 @@ protected:
 private:
   void addGlyph(const CLGraphicalObject* go);
   void fillFromLayout(const CLayout* layout);
-  struct ItemState
-  {
-    bool locked = false;
-    bool showHandles = false;
-  };
-  void setItemLocked(const QString & key, bool locked);
-  void setItemShowHandles(const QString & key, bool show);
-
-  std::map< QString, ItemState > mItemStates;
 
   CLayout* mpLayout;
   CLRenderInformationBase* mpRender;

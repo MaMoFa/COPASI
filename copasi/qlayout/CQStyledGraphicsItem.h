@@ -29,7 +29,7 @@ public:
   virtual ~CQStyledGraphicsItem();
 
   void setLocked(bool locked);
-
+  void setShow(bool show);
 
 protected:
   void contextMenuEvent(QGraphicsSceneContextMenuEvent * event);

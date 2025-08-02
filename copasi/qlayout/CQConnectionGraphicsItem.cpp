@@ -124,6 +124,7 @@ CQConnectionGraphicsItem::CQConnectionGraphicsItem(const CLGlyphWithCurve* curve
 
   setData(COPASI_LAYOUT_KEY, QString(curveGlyph->getKey().c_str()));
   mLocked = curveGlyph->isLocked();
+  mShow = curveGlyph->isShow();
 
   QSharedPointer<QPainterPath> path = getPath(curveGlyph->getCurve());
   mShape.addPath(*path);
@@ -142,6 +143,42 @@ CQConnectionGraphicsItem::CQConnectionGraphicsItem(const CLGlyphWithCurve* curve
 
       addToGroup(itemGroup);
     }
+
+  qDebug() << "mShow:" << mShow;
+
+  if (mShow)
+    {
+      const CLCurve & curve = curveGlyph->getCurve();
+      QGraphicsEllipseItem * testPoint = new QGraphicsEllipseItem(-3, -3, 6, 6, this);
+      testPoint->setBrush(Qt::green);
+      testPoint->setPos(0, 0);
+
+      for (size_t i = 0; i < curve.getNumCurveSegments(); ++i)
+        {
+          const CLLineSegment * segment = curve.getSegmentAt(i);
+          qDebug() << "sizeloop";
+          qDebug() << "b4 loop bezier:" << segment->isBezier();
+
+
+          if (segment->isBezier())
+            {
+              qDebug() << "bezier:" << segment->isBezier();
+              QPointF p1 = QPointF(segment->getBase1().getX(), segment->getBase1().getY());
+              QPointF p2 = QPointF(segment->getBase2().getX(), segment->getBase2().getY());
+
+              QGraphicsEllipseItem * handle1 = new QGraphicsEllipseItem(-5, -5, 10, 10, this);
+              handle1->setBrush(Qt::red);
+              handle1->setPen(Qt::NoPen);
+              handle1->setPos(p1);
+
+              QGraphicsEllipseItem * handle2 = new QGraphicsEllipseItem(-5, -5, 10, 10, this);
+              handle2->setBrush(Qt::blue);
+              handle2->setPen(Qt::NoPen);
+              handle2->setPos(p2);
+            }
+        }
+    }
+
 
   const CLReactionGlyph* reaction = dynamic_cast<const CLReactionGlyph*>(curveGlyph);
 
@@ -214,7 +251,7 @@ void CQConnectionGraphicsItem::contextMenuEvent(QGraphicsSceneContextMenuEvent *
   QAction * showAction = nullptr;
 
   lockAction = menu.addAction(mLocked ? "Unlock" : "Lock");
-  showAction = menu.addAction(mShow ? "Show" : "Hide");
+  showAction = menu.addAction(mShow ? "Hide" : "Show");
 
   QAction * selectedAction = menu.exec(event->screenPos());
 
@@ -234,12 +271,16 @@ void CQConnectionGraphicsItem::setLocked(bool locked)
   {
   mLocked = locked;
   setFlag(QGraphicsItem::ItemIsMovable, !mLocked);
+  CQLayoutScene * currentScene = dynamic_cast< CQLayoutScene * >(scene());
+  currentScene->updateLock(data(COPASI_LAYOUT_KEY).toString(), mLocked);
   update();
 }
 
 void CQConnectionGraphicsItem::setShow(bool show)
 {
   mShow = show;
+  CQLayoutScene * currentScene = dynamic_cast< CQLayoutScene * >(scene());
+  currentScene->updateShow(data(COPASI_LAYOUT_KEY).toString(), mShow);
   update();
 }
 

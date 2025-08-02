@@ -215,24 +215,15 @@ void CQLayoutScene::addGlyph(const CLGraphicalObject* go)
   if (item != NULL)
     {
       QString cn = QString::fromStdString(go->getKey());
-      auto it = mItemStates.find(cn);
-
-      if (it != mItemStates.end())
-        {
-          const ItemState & state = it->second;
-          CLGraphicalObject * nonConstGo = const_cast< CLGraphicalObject * >(go);
-          nonConstGo->setLocked(state.locked);
-          nonConstGo->setShow(state.showHandles);
-
-        }
 
       CDataObject* obj = go->getModelObject();
 
-      /*if (obj != NULL && text == NULL)
+      if (obj != NULL && text == NULL)
         {
           item->setData(COPASI_OBJECT_CN, QString(obj->getStringCN().c_str()));
           mItems[obj->getStringCN()] = item;
-        }*/
+        }
+
       CQCopasiGraphicsItem * cItem = dynamic_cast< CQCopasiGraphicsItem * >(item);
 
       if (obj != NULL && text == NULL)
@@ -243,7 +234,21 @@ void CQLayoutScene::addGlyph(const CLGraphicalObject* go)
             {
               cItem->setLocked(go->isLocked());
               cItem->setShow(go->isShow());
+
+              QGraphicsItem * graphicsItem = dynamic_cast< QGraphicsItem * >(cItem);
+              if (graphicsItem)
+                {
+                  QGraphicsItem::GraphicsItemFlags flags = graphicsItem->flags();
+
+                  if (go->isLocked())
+                    flags &= ~QGraphicsItem::ItemIsMovable; // Wenn locked, nicht beweglich
+                  else
+                    flags |= QGraphicsItem::ItemIsMovable; // Wenn unlocked, beweglich
+
+                  graphicsItem->setFlags(flags);
+                }
             }
+
 
           mItems[obj->getStringCN()] = item;
         }
@@ -268,22 +273,6 @@ void CQLayoutScene::addGlyph(const CLGraphicalObject* go)
           ++it;
         }
     }
-}
-
-void CQLayoutScene::setItemLocked(const QString & key, bool locked)
-{
-  mItemStates[key].locked = locked;
-
-  if (auto item = dynamic_cast< CLGraphicalObject * >(CRootContainer::getKeyFactory()->get(key.toStdString())))
-    item->setLocked(locked);
-}
-
-void CQLayoutScene::setItemShowHandles(const QString & key, bool show)
-{
-  mItemStates[key].showHandles = show;
-
-  if (auto item = dynamic_cast< CLGraphicalObject * >(CRootContainer::getKeyFactory()->get(key.toStdString())))
-    item->setShow(!show);
 }
 
 QGraphicsItem* CQLayoutScene::getItemFor(const std::string& cn)
@@ -352,6 +341,7 @@ void CQLayoutScene::fillFromLayout(const CLayout* layout)
       addGlyph(itList);
       ++itList;
     }
+
 }
 
 CLGraphicalObject* getTextForItem(const CLayout* layout, const CLGraphicalObject* obj)
@@ -493,6 +483,21 @@ void CQLayoutScene::updateLock(const QString & key, bool locked)
     return;
 
   obj->setLocked(locked);
+}
+
+void CQLayoutScene::updateShow(const QString & key, bool show)
+{
+  CKeyFactory * kf = CRootContainer::getKeyFactory();
+
+  if (kf == NULL)
+    return;
+
+  CLGraphicalObject * obj = dynamic_cast< CLGraphicalObject * >(kf->get(key.toStdString()));
+
+  if (obj == NULL)
+    return;
+
+  obj->setShow(show);
 }
 
 void CQLayoutScene::updatePosition(const QString& key, const QPointF& newPos)

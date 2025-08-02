@@ -28,6 +28,7 @@
 
 #include <copasi/layout/CLGlyphs.h>
 #include <copasi/layout/CLRenderResolver.h>
+#include "copasi/core/CRootContainer.h"
 
 CQStyledGraphicsItem::CQStyledGraphicsItem(const CLGraphicalObject* go, const CLRenderResolver* resolver)
   : CQCopasiGraphicsItem(resolver, resolver != NULL ? resolver->resolveStyle(go) : NULL)
@@ -71,9 +72,10 @@ void CQStyledGraphicsItem::contextMenuEvent(QGraphicsSceneContextMenuEvent * eve
 void CQStyledGraphicsItem::setLocked(bool locked)
 {
   mLocked = locked;
-  setFlag(QGraphicsItem::ItemIsMovable, !mLocked);
   CQLayoutScene * currentScene = dynamic_cast< CQLayoutScene * >(scene());
-  currentScene->updateLock(data(COPASI_LAYOUT_KEY).toString(), mLocked);
+  QString key = data(COPASI_LAYOUT_KEY).toString();
+  currentScene->updateLock(key, mLocked);
+  setFlag(QGraphicsItem::ItemIsMovable, !mLocked);
   update();
 }
 
