@@ -42,6 +42,7 @@ QSharedPointer<QPainterPath> CQConnectionGraphicsItem::getPath(const CLCurve& cu
 
       if (segment->isBezier())
         {
+          qDebug() << "Something is bezier :D";
           path.cubicTo(
             segment->getBase1().getX(), segment->getBase1().getY(),
             segment->getBase2().getX(), segment->getBase2().getY(),
@@ -162,7 +163,7 @@ CQConnectionGraphicsItem::CQConnectionGraphicsItem(const CLGlyphWithCurve* curve
 
           if (segment->isBezier())
             {
-              qDebug() << "bezier:" << segment->isBezier();
+              qDebug() << "is bezier loop";
               QPointF p1 = QPointF(segment->getBase1().getX(), segment->getBase1().getY());
               QPointF p2 = QPointF(segment->getBase2().getX(), segment->getBase2().getY());
 

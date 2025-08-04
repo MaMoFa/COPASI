@@ -807,6 +807,13 @@ double CCopasiSpringLayout::getPotential()
   for (i = 0; i < mpLayout->getListOfReactionGlyphs().size(); ++i)
     {
       CLReactionGlyph* pRG = &mpLayout->getListOfReactionGlyphs()[i];
+      std::cout << "Wert von tmp: " << tmp << "lock" << pRG->isLocked() << std::endl;
+
+      if (pRG->isLocked())
+        {
+          tmp = 0;
+          continue;
+        }
 
       for (j = 0; j < pRG->getListOfMetabReferenceGlyphs().size(); ++j)
         {
@@ -838,6 +845,13 @@ double CCopasiSpringLayout::getPotential()
   for (i = 0; i < mpLayout->getListOfGeneralGlyphs().size(); ++i)
     {
       CLGeneralGlyph* pRG = &mpLayout->getListOfGeneralGlyphs()[i];
+      std::cout << "Wert von tmp: " << tmp << "lock" << pRG->isLocked() << std::endl;
+
+      if (pRG->isLocked())
+        {
+          tmp = 0;
+          continue;
+        }
 
       for (j = 0; j < pRG->getListOfReferenceGlyphs().size(); ++j)
         {
@@ -1000,9 +1014,9 @@ void CCopasiSpringLayout::randomize()
             break;
           }
 
-      if (pCompGlyph)
+      if (pCompGlyph && !pMetabGlyph->isLocked())
         randomlyPlaceGlyphInCompartmentGlyph(pMetabGlyph, pCompGlyph, pRandom);
-      else
+      else if (!pMetabGlyph->isLocked())
         randomlyPlaceGlyphInDimensions(pMetabGlyph, &mpLayout->getDimensions(), pRandom);
     }
 

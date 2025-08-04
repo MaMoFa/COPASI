@@ -50,7 +50,6 @@ public:
    */
   void requestStop();
 
-
 protected:
 
   void stepIntegration();
