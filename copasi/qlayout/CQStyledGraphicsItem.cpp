@@ -13,6 +13,7 @@
 // of Manchester.
 // All rights reserved.
 
+#include <QPainter>
 #include <QPen>
 #include <QBrush>
 #include <QMenu>
@@ -106,4 +107,22 @@ QVariant CQStyledGraphicsItem::itemChange(GraphicsItemChange change, const QVari
     }
 
   return QGraphicsItem::itemChange(change, value);
+}
+
+void CQStyledGraphicsItem::paint(QPainter * painter, const QStyleOptionGraphicsItem * option, QWidget * widget)
+{
+  if (mLocked)
+    {
+      painter->save();
+
+      QPen redPen(Qt::red, 2);
+      redPen.setStyle(Qt::DashLine);
+      painter->setPen(redPen);
+      painter->setBrush(Qt::NoBrush);
+
+      QRectF rect = boundingRect();
+      painter->drawRect(rect);
+
+      painter->restore();
+    }
 }

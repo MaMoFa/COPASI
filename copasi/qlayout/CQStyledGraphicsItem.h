@@ -35,6 +35,7 @@ protected:
   void contextMenuEvent(QGraphicsSceneContextMenuEvent * event);
   void mouseReleaseEvent(QGraphicsSceneMouseEvent * event);
   virtual QVariant itemChange(GraphicsItemChange change, const QVariant & value);
+  void paint(QPainter * painter, const QStyleOptionGraphicsItem * option, QWidget * widget) override;
 
   bool mWasMoved;
 };
