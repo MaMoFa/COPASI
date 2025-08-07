@@ -807,7 +807,6 @@ double CCopasiSpringLayout::getPotential()
   for (i = 0; i < mpLayout->getListOfReactionGlyphs().size(); ++i)
     {
       CLReactionGlyph* pRG = &mpLayout->getListOfReactionGlyphs()[i];
-      std::cout << "Wert von tmp: " << tmp << "lock" << pRG->isLocked() << std::endl;
 
       if (pRG->isLocked())
         {
@@ -845,7 +844,6 @@ double CCopasiSpringLayout::getPotential()
   for (i = 0; i < mpLayout->getListOfGeneralGlyphs().size(); ++i)
     {
       CLGeneralGlyph* pRG = &mpLayout->getListOfGeneralGlyphs()[i];
-      std::cout << "Wert von tmp: " << tmp << "lock" << pRG->isLocked() << std::endl;
 
       if (pRG->isLocked())
         {

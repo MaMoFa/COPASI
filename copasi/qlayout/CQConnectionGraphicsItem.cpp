@@ -42,7 +42,6 @@ QSharedPointer<QPainterPath> CQConnectionGraphicsItem::getPath(const CLCurve& cu
 
       if (segment->isBezier())
         {
-          qDebug() << "Something is bezier :D";
           path.cubicTo(
             segment->getBase1().getX(), segment->getBase1().getY(),
             segment->getBase2().getX(), segment->getBase2().getY(),
@@ -74,11 +73,90 @@ CQConnectionGraphicsItem::setUseFullShape(bool useFullShape)
   mUseFullShape = useFullShape;
 }
 
-void CQConnectionGraphicsItem::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
+void CQConnectionGraphicsItem::paint(QPainter * painter, const QStyleOptionGraphicsItem * option, QWidget * widget)
 {
   painter->save();
+
   QGraphicsItemGroup::paint(painter, option, widget);
+
   painter->restore();
+
+  if (this->isLocked())
+    {
+      painter->save();
+      QColor Red(255, 0, 0);
+      QPen redPen(Red, 4);
+      painter->setPen(redPen);
+
+      QList< QGraphicsItem * > stack = this->childItems();
+
+      while (!stack.isEmpty())
+        {
+          QGraphicsItem * item = stack.takeLast();
+
+          if (auto pathItem = dynamic_cast< QGraphicsPathItem * >(item))
+            {
+              painter->drawPath(pathItem->path());
+            }
+          else if (auto lineItem = dynamic_cast< QGraphicsLineItem * >(item))
+            {
+              painter->drawLine(lineItem->line());
+            }
+
+          const auto children = item->childItems();
+          for (QGraphicsItem * child : children)
+            {
+              stack.append(child);
+            }
+        }
+      painter->restore();
+    }
+
+  if (this->isShow())
+    {
+      painter->save();
+      QColor pointColor(0, 128, 255);
+      QBrush brush(pointColor);
+      QPen pointPen(pointColor);
+      pointPen.setWidth(1);
+      painter->setPen(pointPen);
+      painter->setBrush(brush);
+
+      const qreal radius = 4.0;
+
+      QList< QGraphicsItem * > stack = this->childItems();
+
+      while (!stack.isEmpty())
+        {
+          QGraphicsItem * item = stack.takeLast();
+
+          if (auto pathItem = dynamic_cast< QGraphicsPathItem * >(item))
+            {
+              const QPainterPath path = pathItem->path();
+
+              for (int i = 0; i < path.elementCount(); ++i)
+                {
+                  const QPainterPath::Element e = path.elementAt(i);
+                  QPointF point(e.x, e.y);
+                  painter->drawEllipse(point, radius, radius);
+
+                  //if (e.type == QPainterPath::CurveToDataElement)
+                  //{
+                  //    QPointF point(e.x, e.y);
+                  //    painter->drawEllipse(point, radius, radius);
+                  //}
+                }
+            }
+
+          const auto children = item->childItems();
+          for (QGraphicsItem * child : children)
+            {
+              stack.append(child);
+            }
+        }
+
+      painter->restore();
+    }
 }
 
 void CQConnectionGraphicsItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
@@ -144,42 +222,6 @@ CQConnectionGraphicsItem::CQConnectionGraphicsItem(const CLGlyphWithCurve* curve
 
       addToGroup(itemGroup);
     }
-
-  qDebug() << "mShow:" << mShow;
-
-  if (mShow)
-    {
-      const CLCurve & curve = curveGlyph->getCurve();
-      QGraphicsEllipseItem * testPoint = new QGraphicsEllipseItem(-3, -3, 6, 6, this);
-      testPoint->setBrush(Qt::green);
-      testPoint->setPos(0, 0);
-
-      for (size_t i = 0; i < curve.getNumCurveSegments(); ++i)
-        {
-          const CLLineSegment * segment = curve.getSegmentAt(i);
-          qDebug() << "sizeloop";
-          qDebug() << "b4 loop bezier:" << segment->isBezier();
-
-
-          if (segment->isBezier())
-            {
-              qDebug() << "is bezier loop";
-              QPointF p1 = QPointF(segment->getBase1().getX(), segment->getBase1().getY());
-              QPointF p2 = QPointF(segment->getBase2().getX(), segment->getBase2().getY());
-
-              QGraphicsEllipseItem * handle1 = new QGraphicsEllipseItem(-5, -5, 10, 10, this);
-              handle1->setBrush(Qt::red);
-              handle1->setPen(Qt::NoPen);
-              handle1->setPos(p1);
-
-              QGraphicsEllipseItem * handle2 = new QGraphicsEllipseItem(-5, -5, 10, 10, this);
-              handle2->setBrush(Qt::blue);
-              handle2->setPen(Qt::NoPen);
-              handle2->setPos(p2);
-            }
-        }
-    }
-
 
   const CLReactionGlyph* reaction = dynamic_cast<const CLReactionGlyph*>(curveGlyph);
 

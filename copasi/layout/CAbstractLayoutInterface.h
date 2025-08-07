@@ -40,7 +40,6 @@ public:
   virtual bool setState(const std::vector<double> & vars) = 0;
   //virtual bool getState(std::vector<double> & vars) = 0;
   virtual double getPotential() = 0;
-  //virtual bool isVariableLocked(size_t index) const = 0;
 
   std::vector<double>::size_type getNumVariables() const;
   const std::vector<VariableDescription> & getVariablesDescription() const;

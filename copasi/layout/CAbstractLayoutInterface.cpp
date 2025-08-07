@@ -30,10 +30,3 @@ const std::vector<double> & CAbstractLayoutInterface::getMassVector() const
 {
   return mMassVector;
 }
-
-//bool CAbstractLayoutInterface::isVariableLocked(size_t index) const
-//{
-//  if (index >= mGraphicalObjects.size())
-//    return true;
-//  return mGraphicalObjects[index].isLocked();
-//}
