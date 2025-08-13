@@ -901,6 +901,7 @@ CQAutolayoutWizard::CQAutolayoutWizard(const CModel& model, QWidget * parent , Q
   , mModel(model)
   , mLastPageId(CQAutolayoutWizard::NO_PAGE)
 {
+  setWizardStyle(QWizard::ModernStyle);
   this->setOptions(this->options() | QWizard::HaveFinishButtonOnEarlyPages);
   this->setOptions(this->options() & ~QWizard::NoCancelButton);
   this->setWindowTitle(tr("Autolayout Wizard"));

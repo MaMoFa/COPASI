@@ -47,6 +47,7 @@ public:
   void updatePosition(const QString& key, const QPointF& newPos);
   void updateLock(const QString & key, bool locked);
   void updateShow(const QString & kay, bool show);
+  void updateSplit(const QString & key, bool split);
 public slots:
   void recreate();
 signals:

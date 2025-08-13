@@ -500,6 +500,21 @@ void CQLayoutScene::updateShow(const QString & key, bool show)
   obj->setShow(show);
 }
 
+void CQLayoutScene::updateSplit(const QString & key, bool split)
+{
+  CKeyFactory * kf = CRootContainer::getKeyFactory();
+
+  if (kf == NULL)
+    return;
+
+  CLGraphicalObject * obj = dynamic_cast< CLGraphicalObject * >(kf->get(key.toStdString()));
+
+  if (obj == NULL)
+    return;
+
+  obj->setSplit(split);
+}
+
 void CQLayoutScene::updatePosition(const QString& key, const QPointF& newPos)
 {
   CKeyFactory* kf = CRootContainer::getKeyFactory();

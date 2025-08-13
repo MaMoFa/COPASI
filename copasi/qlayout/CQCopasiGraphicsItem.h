@@ -35,14 +35,22 @@ public:
   {
     return mShow;
   }
+  bool isSplit() const
+  {
+    return mSplit;
+  }
+
   void setLocked(bool locked)
   {
     mLocked = locked;
   }
-
   void setShow(bool show)
   {
     mShow = show;
+  }
+  void setSplit(bool split)
+  {
+    mSplit = split;
   }
 
 protected:
@@ -51,6 +59,7 @@ protected:
   bool mIsValid;
   bool mLocked;
   bool mShow;
+  bool mSplit;
 };
 
 #endif

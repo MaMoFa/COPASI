@@ -266,6 +266,7 @@ void CCopasiSpringLayout::addPositionVariables(CLGraphicalObject* pGO)
 
   VariableDescription desc;
   desc.isAngle = false;
+  desc.isLocked = pGO->isLocked();
 
   int first_index = (int)mInitialState.size();
 
@@ -331,6 +332,10 @@ bool CCopasiSpringLayout::setState(const std::vector<double> & vars)
 
   for (it = mUpdateActions.begin(); it != itEnd; ++it)
     {
+      if (dynamic_cast<CLGraphicalObject*>(it->mpTarget)->isLocked())
+      {
+          continue;
+      }
       switch (it->mAction)
         {
           case UpdateAction::COMPARTMENT_4V:
@@ -810,7 +815,7 @@ double CCopasiSpringLayout::getPotential()
 
       if (pRG->isLocked())
         {
-          tmp = 0;
+          //tmp = 0;
           continue;
         }
 
@@ -847,7 +852,7 @@ double CCopasiSpringLayout::getPotential()
 
       if (pRG->isLocked())
         {
-          tmp = 0;
+          //tmp = 0;
           continue;
         }
 
@@ -870,7 +875,11 @@ double CCopasiSpringLayout::getPotential()
     {
       CLMetabGlyph* tmpMG = &mpLayout->getListOfMetaboliteGlyphs()[i];
       std::map<CLBase*, CLCompartmentGlyph*>::const_iterator mapIt = mCompartmentMap.find(tmpMG);
-
+      if (tmpMG->isLocked())
+        {
+          //tmp = 0;
+          continue;
+        }
       if (mapIt == mCompartmentMap.end())
         {
           //there is no information in the map. Should not happen.

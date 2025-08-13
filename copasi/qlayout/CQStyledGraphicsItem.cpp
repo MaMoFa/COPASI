@@ -47,6 +47,10 @@ CQStyledGraphicsItem::CQStyledGraphicsItem(const CLGraphicalObject* go, const CL
   mLocked = go->isLocked();
   setData(Qt::UserRole + 1, type);
 
+  QString type2;
+  mSplit = go->isSplit();
+  setData(Qt::UserRole + 1, type2);
+
   CQRenderConverter::fillGroupFromStyle(this, &go->getBoundingBox(), mpStyle, mpResolver);
 }
 
@@ -58,8 +62,10 @@ void CQStyledGraphicsItem::contextMenuEvent(QGraphicsSceneContextMenuEvent * eve
 {
   QMenu menu;
   QAction * lockAction = nullptr;
+  QAction * splitAction = nullptr;
 
   lockAction = menu.addAction(mLocked ? "Unlock" : "Lock");
+  splitAction = menu.addAction(mSplit ? "Merge" : "Split");
  
   QAction * selectedAction = menu.exec(event->screenPos());
 
@@ -67,6 +73,10 @@ void CQStyledGraphicsItem::contextMenuEvent(QGraphicsSceneContextMenuEvent * eve
     {
       setLocked(!mLocked);    
     }
+  if (selectedAction == splitAction)
+  {
+      setSplit(!mSplit);
+  }
 
   event->accept();}
 
@@ -77,6 +87,15 @@ void CQStyledGraphicsItem::setLocked(bool locked)
   QString key = data(COPASI_LAYOUT_KEY).toString();
   currentScene->updateLock(key, mLocked);
   setFlag(QGraphicsItem::ItemIsMovable, !mLocked);
+  update();
+}
+
+void CQStyledGraphicsItem::setSplit(bool split)
+{
+  mSplit = split;
+  CQLayoutScene * currentScene = dynamic_cast< CQLayoutScene * >(scene());
+  QString key = data(COPASI_LAYOUT_KEY).toString();
+  currentScene->updateSplit(key, mSplit);
   update();
 }
 

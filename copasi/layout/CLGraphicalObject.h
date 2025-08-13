@@ -64,6 +64,7 @@ protected:
   CLBoundingBox mBBox;
   bool mLocked;
   bool mShow;
+  bool mSplit;
 
 
   CLGraphicalObject(const CLGraphicalObject & src);
@@ -84,6 +85,14 @@ bool isShow() const
 void setShow(bool show)
 {
   mShow = show;
+}
+void setSplit(bool split)
+{
+  mSplit = split;
+}
+bool isSplit() const
+{
+  return mSplit;
 }
   /**
    * Static method to create a CDataObject based on the provided data

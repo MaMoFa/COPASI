@@ -30,6 +30,7 @@ public:
 
   void setLocked(bool locked);
   void setShow(bool show);
+  void setSplit(bool split);
 
 protected:
   void contextMenuEvent(QGraphicsSceneContextMenuEvent * event);

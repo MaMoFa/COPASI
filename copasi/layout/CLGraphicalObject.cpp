@@ -76,6 +76,7 @@ CLGraphicalObject::CLGraphicalObject(const std::string & name,
   , mBBox()
   , mLocked(false)
   , mShow(false)
+  , mSplit(false)
 {};
 
 CLGraphicalObject::CLGraphicalObject(const CLGraphicalObject & src,
@@ -87,7 +88,7 @@ CLGraphicalObject::CLGraphicalObject(const CLGraphicalObject & src,
     mObjectRole(src.mObjectRole),
     mBBox(src.mBBox),
     mLocked(src.mLocked),
-    mShow(src.mShow)
+    mShow(src.mShow), mSplit(src.mSplit)
 {};
 
 CLGraphicalObject::CLGraphicalObject(const GraphicalObject & sbml,
@@ -99,6 +100,7 @@ CLGraphicalObject::CLGraphicalObject(const GraphicalObject & sbml,
     mModelObjectKey(""), mBBox(*sbml.getBoundingBox())
   , mLocked(false)
   , mShow(false)
+  , mSplit(false)
 {
   RenderGraphicalObjectPlugin* rgoPlugin = (RenderGraphicalObjectPlugin*) sbml.getPlugin("render");
 
@@ -131,6 +133,7 @@ CLGraphicalObject & CLGraphicalObject::operator= (const CLGraphicalObject & rhs)
   mBBox = rhs.mBBox;
   mLocked = rhs.mLocked;
   mShow = rhs.mShow;
+  mSplit = rhs.mSplit;
 
   return *this;
 }

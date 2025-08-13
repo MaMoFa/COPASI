@@ -26,6 +26,7 @@ CQCopasiGraphicsItem::CQCopasiGraphicsItem(const CLRenderResolver* resolver, con
   , mpResolver(resolver)
   , mIsValid(true)
   , mLocked(false)
+  , mSplit(false)
 {
 }
 

@@ -136,18 +136,19 @@ void CQConnectionGraphicsItem::paint(QPainter * painter, const QStyleOptionGraph
 
               for (int i = 0; i < path.elementCount(); ++i)
                 {
-                  const QPainterPath::Element e = path.elementAt(i);
-                  QPointF point(e.x, e.y);
-                  painter->drawEllipse(point, radius, radius);
+                  auto type = path.elementAt(i).type;
 
-                  //if (e.type == QPainterPath::CurveToDataElement)
-                  //{
-                  //    QPointF point(e.x, e.y);
-                  //    painter->drawEllipse(point, radius, radius);
-                  //}
+                  // Nur Bezier-Hilfspunkte (Control Points) anzeigen
+                  if (type == QPainterPath::CurveToDataElement)
+                    {
+                      const auto & e = path.elementAt(i);
+                      QPointF point(e.x, e.y);
+                      painter->drawEllipse(point, radius, radius);
+                    }
                 }
             }
 
+          // Rekursiv alle Child-Items abarbeiten
           const auto children = item->childItems();
           for (QGraphicsItem * child : children)
             {

@@ -35,6 +35,7 @@ public:
     //double initialValue;
     double lowerBoundary;
     double upperBoundary;
+    bool isLocked = false;
   };
 
   virtual bool setState(const std::vector<double> & vars) = 0;
