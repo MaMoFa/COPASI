@@ -599,7 +599,7 @@ void CQLayoutScene::removeMetab(const CMetab * pMetab)
   if (!mpLayout || !pMetab)
     return;
 
-  // 1) Alle zugehörigen Metab-Glyph-Keys einsammeln
+  // get all metab glyph keys
   CDataVector< CLMetabGlyph > & metabGlyphs = mpLayout->getListOfMetaboliteGlyphs();
   std::vector< std::string > metabGlyphKeys;
 
@@ -609,15 +609,14 @@ void CQLayoutScene::removeMetab(const CMetab * pMetab)
         metabGlyphKeys.push_back(metabGlyphs[i].getKey());
     }
 
-  // 2) TextGlyphs entfernen, die auf diese MetabGlyphs zeigen
+  // rm txtglyphs
   CDataVector< CLTextGlyph > & textGlyphs = mpLayout->getListOfTextGlyphs();
-  for (size_t i = 0; i < textGlyphs.size(); /* kein ++i hier */)
+  for (size_t i = 0; i < textGlyphs.size();)
     {
       const std::string & gk = textGlyphs[i].getGraphicalObjectKey();
       if (std::find(metabGlyphKeys.begin(), metabGlyphKeys.end(), gk) != metabGlyphKeys.end())
         {
-          textGlyphs.remove(i); // CDataVector-API
-          // i NICHT erhöhen; nach remove(i) rutscht das nächste Element auf i
+          textGlyphs.remove(i);
         }
       else
         {
@@ -625,16 +624,16 @@ void CQLayoutScene::removeMetab(const CMetab * pMetab)
         }
     }
 
-  // 3) In allen Reaktionen die MetabReferenceGlyphs entfernen, die auf diese MetabGlyphs zeigen
+  // rm metabrefglyphs
   CDataVector< CLReactionGlyph > & reactions = mpLayout->getListOfReactionGlyphs();
   for (size_t r = 0; r < reactions.size(); ++r)
     {
       CDataVector< CLMetabReferenceGlyph > & refs = reactions[r].getListOfMetabReferenceGlyphs();
-      for (size_t i = 0; i < refs.size(); /* kein ++i hier */)
+      for (size_t i = 0; i < refs.size();)
         {
           if (std::find(metabGlyphKeys.begin(), metabGlyphKeys.end(), refs[i].getMetabGlyphKey()) != metabGlyphKeys.end())
             {
-              refs.remove(i); // CDataVector-API
+              refs.remove(i);
             }
           else
             {
@@ -643,12 +642,12 @@ void CQLayoutScene::removeMetab(const CMetab * pMetab)
         }
     }
 
-  // 4) MetabGlyph(s) selbst entfernen (am Schluss!)
-  for (size_t i = 0; i < metabGlyphs.size(); /* kein ++i hier */)
+  // rm metabglyphs
+  for (size_t i = 0; i < metabGlyphs.size();)
     {
       if (metabGlyphs[i].getModelObjectKey() == pMetab->getKey())
         {
-          metabGlyphs.remove(i); // CDataVector-API
+          metabGlyphs.remove(i);
         }
       else
         {
@@ -656,9 +655,51 @@ void CQLayoutScene::removeMetab(const CMetab * pMetab)
         }
     }
 
-  // Szene neu aufbauen / aktualisieren wie gehabt
+  // recreate scene
   CCopasiSpringLayout::Parameters p;
   CCopasiSpringLayout l(mpLayout, &p);
   l.finalizeState();
   emit recreateNeeded();
+}
+
+bool CQLayoutScene::canSplit(const CLMetabGlyph * pMetabGlyph) const
+{
+  if (!pMetabGlyph)
+    return false;
+
+  const CMetab * pMetab = dynamic_cast< const CMetab * >(pMetabGlyph->getModelObject());
+  if (!pMetab)
+    return false;
+
+  const CModel * pModel = pMetab->getModel();
+  if (!pModel)
+    return false;
+
+  size_t usageCount = 0;
+  const CDataVector< CReaction > & reactions = pModel->getReactions();
+
+  for (size_t r = 0; r < reactions.size(); ++r)
+    {
+      const CReaction & reaction = reactions[r];
+
+      // Substrate
+      const auto & subs = reaction.getChemEq().getSubstrates();
+      for (size_t i = 0; i < subs.size(); ++i)
+        if (subs[i].getMetabolite() == pMetab)
+          usageCount++;
+
+      // Produkte
+      const auto & prods = reaction.getChemEq().getProducts();
+      for (size_t i = 0; i < prods.size(); ++i)
+        if (prods[i].getMetabolite() == pMetab)
+          usageCount++;
+
+      // Modifier
+      const auto & mods = reaction.getChemEq().getModifiers();
+      for (size_t i = 0; i < mods.size(); ++i)
+        if (mods[i].getMetabolite() == pMetab)
+          usageCount++;
+    }
+
+  return (usageCount > 1);
 }

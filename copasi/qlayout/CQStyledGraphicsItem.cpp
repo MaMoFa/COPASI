@@ -34,6 +34,7 @@
 CQStyledGraphicsItem::CQStyledGraphicsItem(const CLGraphicalObject* go, const CLRenderResolver* resolver)
   : CQCopasiGraphicsItem(resolver, resolver != NULL ? resolver->resolveStyle(go) : NULL)
   , mWasMoved(false)
+  , mpGraphicalObject(go)
 {
   setFlag(QGraphicsItem::ItemIsMovable);
   setFlag(QGraphicsItem::ItemIsSelectable);
@@ -65,7 +66,13 @@ void CQStyledGraphicsItem::contextMenuEvent(QGraphicsSceneContextMenuEvent * eve
   QAction * splitAction = nullptr;
 
   lockAction = menu.addAction(mLocked ? "Unlock" : "Lock");
-  splitAction = menu.addAction(mSplit ? "Merge" : "Split");
+
+  CQLayoutScene * scene = dynamic_cast< CQLayoutScene * >(this->scene());
+  CLMetabGlyph * pMetabGlyph = const_cast<CLMetabGlyph *>(dynamic_cast<const CLMetabGlyph *>(mpGraphicalObject));
+  if (scene && pMetabGlyph && scene->canSplit(pMetabGlyph))
+    {
+      splitAction = menu.addAction(mSplit ? "Merge" : "Split");
+    }
  
   QAction * selectedAction = menu.exec(event->screenPos());
 
@@ -73,7 +80,7 @@ void CQStyledGraphicsItem::contextMenuEvent(QGraphicsSceneContextMenuEvent * eve
     {
       setLocked(!mLocked);    
     }
-  if (selectedAction == splitAction)
+  else if (splitAction && selectedAction == splitAction)
   {
       setSplit(!mSplit);
   }

@@ -39,6 +39,9 @@ protected:
   void paint(QPainter * painter, const QStyleOptionGraphicsItem * option, QWidget * widget) override;
 
   bool mWasMoved;
+
+private:
+  const CLGraphicalObject * mpGraphicalObject;
 };
 
 #endif

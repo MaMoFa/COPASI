@@ -53,6 +53,7 @@ public:
   void updateShow(const QString & kay, bool show);
   void updateSplit(const QString & key, bool split);
   void removeMetab(const CMetab * pMetab);
+  bool canSplit(const CLMetabGlyph * pMetabGlyph) const;
   public slots:
   void recreate();
 signals:
