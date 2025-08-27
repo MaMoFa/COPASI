@@ -1078,6 +1078,226 @@ public:
   }
 };
 
+void CCopasiSpringLayout::addSideMetabs(
+  CLayout * pResult, const std::set< const CMetab * > & sideMetabs,
+    Parameters* mParams)
+{
+  double fontSize = 16.0;
+  double fontHeight = fontSize * 1.5;
+
+  // create a species glyph for each species in metabs
+
+  std::map< const CCompartment *, CompartmentInfo > compInfo;
+  std::map< const CMetab *, CLMetabGlyph * > metabMap;
+
+  std::set< const CMetab * >::const_iterator metabIt;
+
+  //now the reaction glyphs
+
+  for (auto reactIt = pResult->getListOfReactionGlyphs().begin(); reactIt != pResult->getListOfReactionGlyphs().end(); ++reactIt)
+    {
+      auto * pReaction = dynamic_cast<CReaction *>( reactIt->getModelObject());
+      bool isReversible = pReaction->getChemEq().getReversibility();
+      //now add the species reference glyphs.
+      auto * pReactionGlyph = dynamic_cast< CLReactionGlyph * >(&(*reactIt));
+
+      //substrates
+      const CDataVector< CChemEqElement > & substrates = (pReaction)->getChemEq().getSubstrates();
+      bool substrateExists = false;
+      CDataVector< CChemEqElement >::const_iterator elIt;
+
+      for (elIt = substrates.begin(); elIt != substrates.end(); ++elIt)
+        {
+          const CMetab * pMetab = elIt->getMetabolite();
+
+          if (!pMetab)
+            continue;
+
+          CLMetabGlyph * pMetabGlyph = NULL;
+          CLMetabReferenceGlyph::Role role; // = CLMetabReferenceGlyph::SUBSTRATE;
+          CLMetabReferenceGlyph::Role functionalRole;
+
+          //is it a side reactant? If yes, create a new metab glyph
+          if (sideMetabs.find(pMetab) != sideMetabs.end())
+            {
+              //estimate the size of the glyph
+              double width = (double) ((pMetab)->getObjectName().length() * fontSize);
+              double height = (double) fontHeight;
+
+              if (width < height)
+                {
+                  width = height;
+                }
+
+              //create the glyph
+              pMetabGlyph = new CLMetabGlyph;
+              pMetabGlyph->setDimensions(CLDimensions(width + 4, height + 4));
+              pMetabGlyph->setModelObjectKey(pMetab->getKey());
+              //TODO: mark as duplicate
+              pResult->addMetaboliteGlyph(pMetabGlyph);
+
+              //create the text glyph for the label
+              CLTextGlyph * pTextGlyph = new CLTextGlyph;
+              pTextGlyph->setDimensions(CLDimensions(width, height));
+              pTextGlyph->setGraphicalObjectKey(pMetabGlyph->getKey());
+              pTextGlyph->setModelObjectKey(pMetab->getKey());
+
+              pResult->addTextGlyph(pTextGlyph);
+
+              //add up the sizes for the compartment
+              
+              role = isReversible
+                       ? CLMetabReferenceGlyph::SIDEPRODUCT
+                       : CLMetabReferenceGlyph::SIDESUBSTRATE;
+              functionalRole = CLMetabReferenceGlyph::SIDESUBSTRATE;
+              
+              CLMetabReferenceGlyph * pRefGlyph = new CLMetabReferenceGlyph;
+              //pResult->setModelObjectKey(modelobjectkey);
+              pRefGlyph->setMetabGlyphKey(pMetabGlyph->getKey());
+              pRefGlyph->setRole(role);
+              pRefGlyph->setFunctionalRole(functionalRole);
+              pReactionGlyph->addMetabReferenceGlyph(pRefGlyph);
+              substrateExists = true;
+            }
+          
+          
+        } //substrates
+
+      //products
+      const CDataVector< CChemEqElement > & products = pReaction->getChemEq().getProducts();
+      bool productExists = false;
+
+      for (elIt = products.begin(); elIt != products.end(); ++elIt)
+        {
+          const CMetab * pMetab = elIt->getMetabolite();
+
+          if (!pMetab)
+            continue;
+
+          CLMetabGlyph * pMetabGlyph = NULL;
+          CLMetabReferenceGlyph::Role role= CLMetabReferenceGlyph::PRODUCT;
+          CLMetabReferenceGlyph::Role functionalRole = CLMetabReferenceGlyph::PRODUCT;
+
+          //is it a side reactant? If yes, create a new metab glyph
+          if (sideMetabs.find(pMetab) != sideMetabs.end())
+            {
+              //estimate the size of the glyph
+              double width = (double) ((pMetab)->getObjectName().length() * fontSize);
+              double height = (double) fontHeight;
+
+              if (width < height)
+                {
+                  width = height;
+                }
+
+              //create the glyph
+              pMetabGlyph = new CLMetabGlyph;
+              pMetabGlyph->setDimensions(CLDimensions(width + 4, height + 4));
+              pMetabGlyph->setModelObjectKey(pMetab->getKey());
+              //TODO: mark as duplicate
+              pResult->addMetaboliteGlyph(pMetabGlyph);
+
+              //create the text glyph for the label
+              CLTextGlyph * pTextGlyph = new CLTextGlyph;
+              pTextGlyph->setDimensions(CLDimensions(width, height));
+              pTextGlyph->setGraphicalObjectKey(pMetabGlyph->getKey());
+              pTextGlyph->setModelObjectKey(pMetab->getKey());
+
+              pResult->addTextGlyph(pTextGlyph);
+
+              role = CLMetabReferenceGlyph::SIDEPRODUCT;
+              functionalRole = CLMetabReferenceGlyph::SIDEPRODUCT;
+
+          CLMetabReferenceGlyph * pRefGlyph = new CLMetabReferenceGlyph;
+              //pResult->setModelObjectKey(modelobjectkey);
+              pRefGlyph->setMetabGlyphKey(pMetabGlyph->getKey());
+              pRefGlyph->setRole(role);
+              pRefGlyph->setFunctionalRole(functionalRole);
+              pReactionGlyph->addMetabReferenceGlyph(pRefGlyph);
+              productExists = true;
+            }
+ 
+
+        } //products
+
+
+      //modifiers
+      const CDataVector< CChemEqElement > & modifiers = pReaction->getChemEq().getModifiers();
+
+      for (elIt = modifiers.begin(); elIt != modifiers.end(); ++elIt)
+        {
+          const CMetab * pMetab = elIt->getMetabolite();
+
+          if (!pMetab)
+            continue;
+
+          CLMetabGlyph * pMetabGlyph = NULL;
+          CLMetabReferenceGlyph::Role role; // = CLMetabReferenceGlyph::SUBSTRATE;
+
+          //is it a side reactant? If yes, create a new metab glyph
+          if (sideMetabs.find(pMetab) != sideMetabs.end())
+            {
+              //estimate the size of the glyph
+              double width = (double) ((pMetab)->getObjectName().length() * fontSize);
+              double height = (double) fontHeight;
+
+              if (width < height)
+                {
+                  width = height;
+                }
+
+              //create the glyph
+              pMetabGlyph = new CLMetabGlyph;
+              pMetabGlyph->setDimensions(CLDimensions(width + 4, height + 4));
+              pMetabGlyph->setModelObjectKey(pMetab->getKey());
+              //TODO: mark as duplicate
+              pResult->addMetaboliteGlyph(pMetabGlyph);
+
+              //create the text glyph for the label
+              CLTextGlyph * pTextGlyph = new CLTextGlyph;
+              pTextGlyph->setDimensions(CLDimensions(width, height));
+              pTextGlyph->setGraphicalObjectKey(pMetabGlyph->getKey());
+              pTextGlyph->setModelObjectKey(pMetab->getKey());
+
+              pResult->addTextGlyph(pTextGlyph);
+
+              
+          CLMetabReferenceGlyph * pRefGlyph = new CLMetabReferenceGlyph;
+              //pResult->setModelObjectKey(modelobjectkey);
+              pRefGlyph->setMetabGlyphKey(pMetabGlyph->getKey());
+              pRefGlyph->setRole(role);
+              pReactionGlyph->addMetabReferenceGlyph(pRefGlyph);
+            }
+
+
+        } //modifiers
+    } //reactions
+
+  //rules
+  size_t i;
+
+  //
+  // double sss = sqrt(compInfo[NULL].mAreaSum * 40);
+  //
+  // // determine and set the layout dimensions
+  // CLBoundingBox box = pResult->calculateBoundingBox();
+  // if (box.getDimensions().getWidth() < sss)
+  //   box.getDimensions().setWidth(sss);
+  //
+  // if (box.getDimensions().getHeight() < sss)
+  //   box.getDimensions().setHeight(sss);
+  //
+  // pResult->setDimensions(CLDimensions(box.getDimensions().getWidth() + 30.0, box.getDimensions().getHeight() + 30.0));
+
+  // randomize
+  CCopasiSpringLayout l(pResult, mParams);
+  l.randomize();
+
+  // determine and set the layout dimensions
+  CLBoundingBox box = pResult->calculateBoundingBox();
+  pResult->setDimensions(CLDimensions(box.getDimensions().getWidth() + 30.0, box.getDimensions().getHeight() + 30.0));
+ }
+
 CLayout* CCopasiSpringLayout::createLayout(
   CDataContainer *parent,
   const std::set<const CCompartment*>& compartments,

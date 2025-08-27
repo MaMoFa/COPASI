@@ -162,7 +162,11 @@ public:
     Parameters* mParams = NULL
   );
 
-//  virtual bool getState(std::vector<double> & vars);
+  void addSideMetabs(
+    CLayout * pResult, const std::set< const CMetab * > & sideMetabs,
+    Parameters * mParams = NULL);
+
+    //  virtual bool getState(std::vector<double> & vars);
 
   virtual double getPotential();
   virtual const std::vector<double> & getInitialValues() const;

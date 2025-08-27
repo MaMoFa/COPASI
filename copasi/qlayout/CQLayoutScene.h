@@ -21,12 +21,16 @@
 
 #include <string>
 
+#include "copasi/model/CMetab.h"
+#include "copasi/layout/CLayout.h"
+
 class CLayout;
 class CLGraphicalObject;
 class CLRenderResolver;
 class CDataModel;
 class CLRenderInformationBase;
 class CQCopasiEffect;
+class CCopasiSpringLayout;
 
 class CQLayoutScene: public QGraphicsScene
 {
@@ -48,7 +52,8 @@ public:
   void updateLock(const QString & key, bool locked);
   void updateShow(const QString & kay, bool show);
   void updateSplit(const QString & key, bool split);
-public slots:
+  void removeMetab(const CMetab * pMetab);
+  public slots:
   void recreate();
 signals:
   void recreateNeeded();
@@ -57,6 +62,8 @@ protected:
 private:
   void addGlyph(const CLGraphicalObject* go);
   void fillFromLayout(const CLayout* layout);
+  CCopasiSpringLayout * mpSpringLayout;
+  bool isSideMetabolite(const CMetab * m) const;
 
   CLayout* mpLayout;
   CLRenderInformationBase* mpRender;

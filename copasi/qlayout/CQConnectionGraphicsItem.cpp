@@ -138,7 +138,6 @@ void CQConnectionGraphicsItem::paint(QPainter * painter, const QStyleOptionGraph
                 {
                   auto type = path.elementAt(i).type;
 
-                  // Nur Bezier-Hilfspunkte (Control Points) anzeigen
                   if (type == QPainterPath::CurveToDataElement)
                     {
                       const auto & e = path.elementAt(i);
@@ -147,8 +146,6 @@ void CQConnectionGraphicsItem::paint(QPainter * painter, const QStyleOptionGraph
                     }
                 }
             }
-
-          // Rekursiv alle Child-Items abarbeiten
           const auto children = item->childItems();
           for (QGraphicsItem * child : children)
             {

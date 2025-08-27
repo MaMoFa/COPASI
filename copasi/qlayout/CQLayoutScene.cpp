@@ -57,9 +57,11 @@ CQLayoutScene::CQLayoutScene(CLayout* layout, CDataModel* model, CLRenderInforma
   , mpLayout(layout)
   , mpRender(renderInformation)
   , mpResolver(NULL)
+  , mpSpringLayout(nullptr)
 {
   initializeResolver(model, renderInformation);
   connect(this, SIGNAL(recreateNeeded()), this, SLOT(recreate()), Qt::QueuedConnection);
+  mpSpringLayout = new CCopasiSpringLayout(mpLayout);
 }
 
 void CQLayoutScene::setLayout(CLayout *layout, CDataModel* model, CLRenderInformationBase* renderInformation)
@@ -500,6 +502,43 @@ void CQLayoutScene::updateShow(const QString & key, bool show)
   obj->setShow(show);
 }
 
+bool CQLayoutScene::isSideMetabolite(const CMetab * m) const
+{
+  size_t count = 0;
+
+  // durch alle Reaktionen des Modells iterieren
+  const auto & reactions = mpLayout->getListOfReactions();
+  for (const auto & reaction : reactions)
+    {
+      // substrates
+      const auto & subs = reaction->getChemEq().getSubstrates();
+      for (const auto & s : subs)
+        {
+          if (s.getMetabolite() == m)
+            ++count;
+        }
+
+      // products
+      const auto & prods = reaction->getChemEq().getProducts();
+      for (const auto & p : prods)
+        {
+          if (p.getMetabolite() == m)
+            ++count;
+        }
+
+      // modifiers
+      const auto & mods = reaction->getChemEq().getModifiers();
+      for (const auto & mod : mods)
+        {
+          if (mod.getMetabolite() == m)
+            return true; // als Modifikator = SideMetab
+        }
+    }
+
+  // z.B. ein SideMetab, wenn es nur in einer Reaktion vorkommt
+  return count == 1;
+}
+
 void CQLayoutScene::updateSplit(const QString & key, bool split)
 {
   CKeyFactory * kf = CRootContainer::getKeyFactory();
@@ -513,6 +552,26 @@ void CQLayoutScene::updateSplit(const QString & key, bool split)
     return;
 
   obj->setSplit(split);
+
+  CLMetabGlyph* pMetabGlyph = dynamic_cast< CLMetabGlyph * >(obj);
+  if (!pMetabGlyph)
+    return;
+
+if (split)
+    {
+      std::set< const CMetab * > sideMetabs;
+      sideMetabs.insert(dynamic_cast< CMetab * >(pMetabGlyph->getModelObject()));
+
+      removeMetab(dynamic_cast< CMetab * >(pMetabGlyph->getModelObject()));
+
+      mpSpringLayout->addSideMetabs(mpLayout, sideMetabs);
+    }
+
+// restore lines
+CCopasiSpringLayout::Parameters p;
+CCopasiSpringLayout l(mpLayout, &p);
+l.finalizeState();
+emit recreateNeeded();
 }
 
 void CQLayoutScene::updatePosition(const QString& key, const QPointF& newPos)
@@ -535,4 +594,71 @@ void CQLayoutScene::updatePosition(const QString& key, const QPointF& newPos)
 
   emit recreateNeeded();
 }
+void CQLayoutScene::removeMetab(const CMetab * pMetab)
+{
+  if (!mpLayout || !pMetab)
+    return;
 
+  // 1) Alle zugehörigen Metab-Glyph-Keys einsammeln
+  CDataVector< CLMetabGlyph > & metabGlyphs = mpLayout->getListOfMetaboliteGlyphs();
+  std::vector< std::string > metabGlyphKeys;
+
+  for (size_t i = 0; i < metabGlyphs.size(); ++i)
+    {
+      if (metabGlyphs[i].getModelObjectKey() == pMetab->getKey())
+        metabGlyphKeys.push_back(metabGlyphs[i].getKey());
+    }
+
+  // 2) TextGlyphs entfernen, die auf diese MetabGlyphs zeigen
+  CDataVector< CLTextGlyph > & textGlyphs = mpLayout->getListOfTextGlyphs();
+  for (size_t i = 0; i < textGlyphs.size(); /* kein ++i hier */)
+    {
+      const std::string & gk = textGlyphs[i].getGraphicalObjectKey();
+      if (std::find(metabGlyphKeys.begin(), metabGlyphKeys.end(), gk) != metabGlyphKeys.end())
+        {
+          textGlyphs.remove(i); // CDataVector-API
+          // i NICHT erhöhen; nach remove(i) rutscht das nächste Element auf i
+        }
+      else
+        {
+          ++i;
+        }
+    }
+
+  // 3) In allen Reaktionen die MetabReferenceGlyphs entfernen, die auf diese MetabGlyphs zeigen
+  CDataVector< CLReactionGlyph > & reactions = mpLayout->getListOfReactionGlyphs();
+  for (size_t r = 0; r < reactions.size(); ++r)
+    {
+      CDataVector< CLMetabReferenceGlyph > & refs = reactions[r].getListOfMetabReferenceGlyphs();
+      for (size_t i = 0; i < refs.size(); /* kein ++i hier */)
+        {
+          if (std::find(metabGlyphKeys.begin(), metabGlyphKeys.end(), refs[i].getMetabGlyphKey()) != metabGlyphKeys.end())
+            {
+              refs.remove(i); // CDataVector-API
+            }
+          else
+            {
+              ++i;
+            }
+        }
+    }
+
+  // 4) MetabGlyph(s) selbst entfernen (am Schluss!)
+  for (size_t i = 0; i < metabGlyphs.size(); /* kein ++i hier */)
+    {
+      if (metabGlyphs[i].getModelObjectKey() == pMetab->getKey())
+        {
+          metabGlyphs.remove(i); // CDataVector-API
+        }
+      else
+        {
+          ++i;
+        }
+    }
+
+  // Szene neu aufbauen / aktualisieren wie gehabt
+  CCopasiSpringLayout::Parameters p;
+  CCopasiSpringLayout l(mpLayout, &p);
+  l.finalizeState();
+  emit recreateNeeded();
+}

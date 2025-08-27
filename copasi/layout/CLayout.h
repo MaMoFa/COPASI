@@ -33,6 +33,8 @@
 #include "CLGlyphs.h"
 #include "CLReactionGlyph.h"
 
+#include "copasi/model/CReaction.h"
+
 #include "copasi/layout/CLLocalRenderInformation.h"
 
 LIBSBML_CPP_NAMESPACE_BEGIN
@@ -242,6 +244,18 @@ public:
 
   const std::string & getLastUsedRenderInformation() const;
   void setLastUsedRenderInformation(const std::string & renderInformation);
+
+  /**
+   * Neue Methode, um die Liste der Reaktionen zurückzugeben
+   */
+  const std::vector<CReaction*>& getListOfReactions() const
+  {
+    return mReactions;
+  }
+
+private:
+  // Liste der Reaktionen
+  std::vector<CReaction*> mReactions;
 
 protected:
   void writeDotNode(std::ostream & os, const std::string & id,
