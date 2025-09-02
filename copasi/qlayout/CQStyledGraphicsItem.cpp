@@ -151,4 +151,16 @@ void CQStyledGraphicsItem::paint(QPainter * painter, const QStyleOptionGraphicsI
 
       painter->restore();
     }
+
+  if (isSelected())
+    {
+      painter->save();
+      QPen bluePen(Qt::blue, 2);
+      bluePen.setStyle(Qt::DashLine);
+      painter->setPen(bluePen);
+      painter->setBrush(Qt::NoBrush);
+      QRectF rect = boundingRect();
+      painter->drawRect(rect);
+      painter->restore();
+    }
 }
