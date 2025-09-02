@@ -198,6 +198,20 @@ void CQLayoutView::slotRenderInformationChanged(int index)
   emit renderInformationChanged();
 }
 
+void CQLayoutView::slotSelectionMode(bool)
+{
+  if (mpSelectionMode->isChecked())
+  {
+      mpSelectionMode->setText(tr("Selection: Drag"));
+      setDragMode(QGraphicsView::ScrollHandDrag);
+  }
+  else
+  {
+      mpSelectionMode->setText(tr("Selection: Rubber Band"));
+      setDragMode(QGraphicsView::RubberBandDrag);
+  }
+}
+
 void CQLayoutView::slotLayoutChanged(int index)
 {
   if (mIgnoreEvents || index < 0) return;
@@ -317,6 +331,11 @@ void CQLayoutView::createActions()
   connect(mpLayoutDropdown, SIGNAL(currentIndexChanged(int)), this, SLOT(slotLayoutChanged(int)));
   connect(mpRenderDropdown, SIGNAL(currentIndexChanged(int)), this, SLOT(slotRenderInformationChanged(int)));
 
+  mpSelectionMode = new QAction(tr("Selection: Drag"), this);
+  mpSelectionMode->setCheckable(true);
+  mpSelectionMode->setChecked(true);
+  connect(mpSelectionMode, SIGNAL(triggered(bool)), this, SLOT(slotSelectionMode(bool)));
+
   setInteractive(true);
   setRenderHints(QPainter::Antialiasing);
 }
@@ -339,6 +358,8 @@ void CQLayoutView::fillSelectionToolBar(QToolBar* toolBar)
   pLayout->addWidget(mpRenderLabel);
   pLayout->addWidget(mpRenderDropdown);
 
+  // add action to select elements only
+  toolBar->addAction(mpSelectionMode);
   toolBar->addWidget(pFrame1);
   toolBar->addWidget(pFrame2);
 }

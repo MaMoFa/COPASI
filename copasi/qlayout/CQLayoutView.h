@@ -47,6 +47,7 @@ public slots:
   void slotSaveToFile(const QString& fileName);
   void slotLayoutChanged(int);
   void slotRenderInformationChanged(int);
+  void slotSelectionMode(bool);
 
 signals:
   void renderInformationChanged();
@@ -64,6 +65,8 @@ protected:
   QComboBox* mpRenderDropdown;
   bool mIgnoreEvents;
   CDataModel* mpDataModel;
+
+  QAction* mpSelectionMode;
 
 private:
   void createActions();
