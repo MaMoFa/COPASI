@@ -44,7 +44,7 @@ public:
   {
     mLocked = locked;
   }
-  void setShow(bool show)
+  virtual void setShow(bool show)
   {
     mShow = show;
   }

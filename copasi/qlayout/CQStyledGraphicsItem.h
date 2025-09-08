@@ -35,7 +35,7 @@ public:
   virtual ~CQStyledGraphicsItem();
 
   void setLocked(bool locked);
-  void setShow(bool show);
+  //virtual void setShow(bool show);
   void setSplit(bool split);
 
 protected:

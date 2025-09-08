@@ -30,7 +30,8 @@ class CQConnectionGraphicsItem : public QObject, public CQCopasiGraphicsItem, pu
   Q_OBJECT
 public:
   void setLocked(bool locked);
-  CQConnectionGraphicsItem(const CLGlyphWithCurve* glyph, const CLRenderResolver* resolver = NULL);
+  virtual void setShow(bool show);
+  CQConnectionGraphicsItem(const CLGlyphWithCurve * glyph, const CLRenderResolver * resolver = NULL);
   virtual ~CQConnectionGraphicsItem();
   static QSharedPointer<QPainterPath> getPath(const CLCurve& curve);
   virtual QPainterPath shape() const;

@@ -317,6 +317,16 @@ void CQConnectionGraphicsItem::contextMenuEvent(QGraphicsSceneContextMenuEvent *
   event->accept();
 }
 
+void CQConnectionGraphicsItem::setShow(bool show)
+{
+  CQCopasiGraphicsItem::setShow(show);
+  mShow = show;
+  CQLayoutScene * currentScene = dynamic_cast< CQLayoutScene * >(scene());
+  if (currentScene)
+    currentScene->updateShow(data(COPASI_LAYOUT_KEY).toString(), mShow);
+  update();
+}
+
 void CQConnectionGraphicsItem::setLocked(bool locked)
   {
   mLocked = locked;
