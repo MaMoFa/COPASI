@@ -54,7 +54,9 @@ public:
   void updateSplit(const QString & key, bool split);
   void removeMetab(const CMetab * pMetab);
   bool canSplit(const CLMetabGlyph * pMetabGlyph) const;
+  bool canMerge() const;
   public slots:
+  void mergeSelected();
   void recreate();
 signals:
   void recreateNeeded();

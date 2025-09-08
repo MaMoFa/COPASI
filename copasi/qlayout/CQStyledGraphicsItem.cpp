@@ -59,33 +59,185 @@ CQStyledGraphicsItem::~CQStyledGraphicsItem()
 {
 }
 
+enum class LockState
+{
+  AllLocked,
+  AllUnlocked,
+  Mixed
+};
+
+// Context menu for Lock/Split/Merge/Delete
 void CQStyledGraphicsItem::contextMenuEvent(QGraphicsSceneContextMenuEvent * event)
 {
-  QMenu menu;
-  QAction * lockAction = nullptr;
-  QAction * splitAction = nullptr;
-
-  lockAction = menu.addAction(mLocked ? "Unlock" : "Lock");
-
   CQLayoutScene * scene = dynamic_cast< CQLayoutScene * >(this->scene());
-  CLMetabGlyph * pMetabGlyph = const_cast<CLMetabGlyph *>(dynamic_cast<const CLMetabGlyph *>(mpGraphicalObject));
-  if (scene && pMetabGlyph && scene->canSplit(pMetabGlyph))
+  if (!scene)
+    return;
+
+  // Update selection: if clicked item is not selected, select only it
+  if (!this->isSelected())
     {
-      splitAction = menu.addAction(mSplit ? "Merge" : "Split");
+      scene->clearSelection();
+      this->setSelected(true);
     }
- 
+
+  const QList< QGraphicsItem * > sel = scene->selectedItems();
+  if (sel.empty())
+    return;
+
+  QMenu menu;
+
+  // Determine LockState
+  bool hasLocked = false;
+  bool hasUnlocked = false;
+  LockState lockState = LockState::AllLocked;
+
+  for (QGraphicsItem * gi : sel)
+    {
+      if (auto * styled = dynamic_cast< CQStyledGraphicsItem * >(gi))
+        {
+          if (styled->mLocked)
+            hasLocked = true;
+          else
+            hasUnlocked = true;
+
+          if (hasLocked && hasUnlocked)
+            {
+              lockState = LockState::Mixed;
+              break;
+            }
+        }
+    }
+
+  if (!(hasLocked && hasUnlocked))
+    {
+      lockState = hasLocked ? LockState::AllLocked : LockState::AllUnlocked;
+    }
+
+  // Add Lock / Unlock / Invert actions
+  QAction * invertAction = nullptr;
+  QAction * lockAction = nullptr;
+  QAction * unlockAction = nullptr;
+
+  switch (lockState)
+    {
+    case LockState::AllLocked:
+      unlockAction = menu.addAction("Unlock");
+      break;
+    case LockState::AllUnlocked:
+      lockAction = menu.addAction("Lock");
+      break;
+    case LockState::Mixed:
+      invertAction = menu.addAction("Invert");
+      lockAction = menu.addAction("Lock");
+      unlockAction = menu.addAction("Unlock");
+      break;
+    }
+
+  // Check if any selected item is splittable
+  bool anySplittable = false;
+  for (QGraphicsItem * gi : sel)
+    {
+      if (auto * styled = dynamic_cast< CQStyledGraphicsItem * >(gi))
+        {
+          const CLMetabGlyph * metabGlyph = dynamic_cast< const CLMetabGlyph * >(styled->mpGraphicalObject);
+          if (metabGlyph && scene->canSplit(metabGlyph))
+            {
+              anySplittable = true;
+              break;
+            }
+        }
+    }
+
+  QAction * splitAction = anySplittable ? menu.addAction("Split") : nullptr;
+  QAction * mergeAction = scene->canMerge() ? menu.addAction("Merge") : nullptr;
+
+  // Check if any selected item is a Metabolite glyph for deletion
+  bool anyMetabSelected = false;
+  for (QGraphicsItem * gi : sel)
+    {
+      if (auto * styled = dynamic_cast< CQStyledGraphicsItem * >(gi))
+        {
+          const CLMetabGlyph * metabGlyph = dynamic_cast< const CLMetabGlyph * >(styled->mpGraphicalObject);
+          if (metabGlyph)
+            {
+              anyMetabSelected = true;
+              break;
+            }
+        }
+    }
+  QAction * deleteAction = anyMetabSelected ? menu.addAction("Delete") : nullptr;
+
+  // Execute the menu
   QAction * selectedAction = menu.exec(event->screenPos());
 
-  if (selectedAction == lockAction)
-    {
-      setLocked(!mLocked);    
-    }
-  else if (splitAction && selectedAction == splitAction)
-  {
-      setSplit(!mSplit);
-  }
+  if (!selectedAction)
+    return; // Do nothing if user canceled menu
 
-  event->accept();}
+  // Lock/Unlock/Invert actions
+  if (selectedAction == invertAction)
+    {
+      for (QGraphicsItem * gi : sel)
+        {
+          if (auto * styled = dynamic_cast< CQStyledGraphicsItem * >(gi))
+            styled->setLocked(!styled->mLocked);
+        }
+    }
+  else if (selectedAction == lockAction)
+    {
+      for (QGraphicsItem * gi : sel)
+        {
+          if (auto * styled = dynamic_cast< CQStyledGraphicsItem * >(gi))
+            styled->setLocked(true);
+        }
+    }
+  else if (selectedAction == unlockAction)
+    {
+      for (QGraphicsItem * gi : sel)
+        {
+          if (auto * styled = dynamic_cast< CQStyledGraphicsItem * >(gi))
+            styled->setLocked(false);
+        }
+    }
+
+  // Split selected splittable items
+  else if (splitAction && selectedAction == splitAction)
+    {
+      for (QGraphicsItem * gi : sel)
+        {
+          if (auto * styled = dynamic_cast< CQStyledGraphicsItem * >(gi))
+            {
+              const CLMetabGlyph * metabGlyph = dynamic_cast< const CLMetabGlyph * >(styled->mpGraphicalObject);
+              if (metabGlyph && scene->canSplit(metabGlyph))
+                scene->updateSplit(QString::fromStdString(metabGlyph->getKey()), true);
+            }
+        }
+    }
+
+  // Merge selected mergable items
+  else if (mergeAction && selectedAction == mergeAction)
+    {
+      scene->mergeSelected();
+    }
+ 
+  // Delete selected glyphs and all associated reaction glyphs
+  else if (deleteAction && selectedAction == deleteAction)
+    {
+      for (QGraphicsItem * gi : sel)
+        {
+          if (auto * styled = dynamic_cast< CQStyledGraphicsItem * >(gi))
+            {
+              const CLMetabGlyph * metabGlyph = dynamic_cast< const CLMetabGlyph * >(styled->mpGraphicalObject);
+              if (metabGlyph)
+                {
+                  const CMetab * metab = dynamic_cast< const CMetab * >(metabGlyph->getModelObject());
+                  if (metab)
+                    scene->removeMetab(metab); // Remove glyph + all associated reaction glyphs
+                }
+            }
+        }
+    }
+  event->accept();
+}
 
 void CQStyledGraphicsItem::setLocked(bool locked)
 {
@@ -163,4 +315,31 @@ void CQStyledGraphicsItem::paint(QPainter * painter, const QStyleOptionGraphicsI
       painter->drawRect(rect);
       painter->restore();
     }
+}
+
+// Handle mouse press to manage selection correctly for right-clicks
+void CQStyledGraphicsItem::mousePressEvent(QGraphicsSceneMouseEvent * event)
+{
+  // Only handle right mouse button
+  if (event->button() == Qt::RightButton)
+    {
+      CQLayoutScene * scene = dynamic_cast< CQLayoutScene * >(this->scene());
+      if (!scene)
+        return;
+
+      // If right-clicked item is NOT selected, deselect all others and select only this item
+      if (!this->isSelected())
+        {
+          scene->clearSelection();
+          this->setSelected(true);
+        }
+      // If already selected, keep selection unchanged
+
+      // Accept event to prevent default Qt selection behavior
+      event->accept();
+      return;
+    }
+
+  // For left-click and others, use default behavior
+  QGraphicsItem::mousePressEvent(event);
 }

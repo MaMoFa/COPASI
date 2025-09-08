@@ -28,6 +28,8 @@
 #include <copasi/layout/CLReactionGlyph.h>
 #include <copasi/layout/CLRenderResolver.h>
 
+#include "CQBezierPointItem.h"
+
 QSharedPointer<QPainterPath> CQConnectionGraphicsItem::getPath(const CLCurve& curve)
 {
   QSharedPointer<QPainterPath> result = QSharedPointer<QPainterPath>(new QPainterPath());
@@ -73,14 +75,18 @@ CQConnectionGraphicsItem::setUseFullShape(bool useFullShape)
   mUseFullShape = useFullShape;
 }
 
-void CQConnectionGraphicsItem::paint(QPainter * painter, const QStyleOptionGraphicsItem * option, QWidget * widget)
+void CQConnectionGraphicsItem::paint(QPainter * painter,
+                                     const QStyleOptionGraphicsItem * option,
+                                     QWidget * widget)
 {
   painter->save();
 
+  // paint child items (lines, paths)
   QGraphicsItemGroup::paint(painter, option, widget);
 
   painter->restore();
 
+  //paint red if locked
   if (this->isLocked())
     {
       painter->save();
@@ -89,71 +95,74 @@ void CQConnectionGraphicsItem::paint(QPainter * painter, const QStyleOptionGraph
       painter->setPen(redPen);
 
       QList< QGraphicsItem * > stack = this->childItems();
-
       while (!stack.isEmpty())
         {
           QGraphicsItem * item = stack.takeLast();
 
           if (auto pathItem = dynamic_cast< QGraphicsPathItem * >(item))
-            {
-              painter->drawPath(pathItem->path());
-            }
+            painter->drawPath(pathItem->path());
           else if (auto lineItem = dynamic_cast< QGraphicsLineItem * >(item))
-            {
-              painter->drawLine(lineItem->line());
-            }
+            painter->drawLine(lineItem->line());
 
           const auto children = item->childItems();
           for (QGraphicsItem * child : children)
-            {
-              stack.append(child);
-            }
+            stack.append(child);
         }
+
       painter->restore();
     }
 
   if (this->isShow())
     {
-      painter->save();
-      QColor pointColor(0, 128, 255);
-      QBrush brush(pointColor);
-      QPen pointPen(pointColor);
-      pointPen.setWidth(1);
-      painter->setPen(pointPen);
-      painter->setBrush(brush);
-
-      const qreal radius = 4.0;
-
       QList< QGraphicsItem * > stack = this->childItems();
 
       while (!stack.isEmpty())
         {
           QGraphicsItem * item = stack.takeLast();
 
-          if (auto pathItem = dynamic_cast< QGraphicsPathItem * >(item))
+          if (auto * pathItem = dynamic_cast< QGraphicsPathItem * >(item))
             {
               const QPainterPath path = pathItem->path();
 
               for (int i = 0; i < path.elementCount(); ++i)
                 {
-                  auto type = path.elementAt(i).type;
+                  QPainterPath::Element elem = path.elementAt(i);
 
-                  if (type == QPainterPath::CurveToDataElement)
+                  // Nur Bezier-Kontrollpunkte (CurveToDataElement)
+                  if (elem.type == QPainterPath::CurveToDataElement)
                     {
-                      const auto & e = path.elementAt(i);
-                      QPointF point(e.x, e.y);
-                      painter->drawEllipse(point, radius, radius);
+                      QPointF point(elem.x, elem.y);
+
+                      // Prüfen, ob bereits ein Punkt existiert
+                      bool exists = false;
+                      for (auto child : pathItem->childItems())
+                        {
+                          if (auto bp = dynamic_cast< CQBezierPointItem * >(child))
+                            {
+                              if (bp->pos() == point)
+                                {
+                                  exists = true;
+                                  break;
+                                }
+                            }
+                        }
+
+                      // Falls nicht, Punkt erzeugen
+                      if (!exists)
+                        {
+                          auto * bp = new CQBezierPointItem(pathItem, i, point, pathItem);
+                          // Parent ist pathItem, aber pathItem nicht selektierbar
+                          pathItem->setFlag(QGraphicsItem::ItemIsSelectable, false);
+                        }
                     }
                 }
             }
+
+          // Rekursion über Kinder
           const auto children = item->childItems();
           for (QGraphicsItem * child : children)
-            {
-              stack.append(child);
-            }
+            stack.append(child);
         }
-
-      painter->restore();
     }
 }
 
@@ -316,15 +325,6 @@ void CQConnectionGraphicsItem::setLocked(bool locked)
   currentScene->updateLock(data(COPASI_LAYOUT_KEY).toString(), mLocked);
   update();
 }
-
-void CQConnectionGraphicsItem::setShow(bool show)
-{
-  mShow = show;
-  CQLayoutScene * currentScene = dynamic_cast< CQLayoutScene * >(scene());
-  currentScene->updateShow(data(COPASI_LAYOUT_KEY).toString(), mShow);
-  update();
-}
-
 
 CQConnectionGraphicsItem::~CQConnectionGraphicsItem()
 {

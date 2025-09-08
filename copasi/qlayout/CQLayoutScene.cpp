@@ -506,7 +506,7 @@ bool CQLayoutScene::isSideMetabolite(const CMetab * m) const
 {
   size_t count = 0;
 
-  // durch alle Reaktionen des Modells iterieren
+  // iterate through all reactions of the model
   const auto & reactions = mpLayout->getListOfReactions();
   for (const auto & reaction : reactions)
     {
@@ -531,11 +531,10 @@ bool CQLayoutScene::isSideMetabolite(const CMetab * m) const
       for (const auto & mod : mods)
         {
           if (mod.getMetabolite() == m)
-            return true; // als Modifikator = SideMetab
+            return true;
         }
     }
 
-  // z.B. ein SideMetab, wenn es nur in einer Reaktion vorkommt
   return count == 1;
 }
 
@@ -667,39 +666,173 @@ bool CQLayoutScene::canSplit(const CLMetabGlyph * pMetabGlyph) const
   if (!pMetabGlyph)
     return false;
 
-  const CMetab * pMetab = dynamic_cast< const CMetab * >(pMetabGlyph->getModelObject());
-  if (!pMetab)
-    return false;
-
-  const CModel * pModel = pMetab->getModel();
-  if (!pModel)
-    return false;
-
+  const std::string glyphKey = pMetabGlyph->getKey();
   size_t usageCount = 0;
-  const CDataVector< CReaction > & reactions = pModel->getReactions();
 
+  // Check all reactionglyphs in layout
+  const CDataVector< CLReactionGlyph > & reactions = mpLayout->getListOfReactionGlyphs();
   for (size_t r = 0; r < reactions.size(); ++r)
     {
-      const CReaction & reaction = reactions[r];
+      const CLReactionGlyph & reactionGlyph = reactions[r];
+      const CDataVector< CLMetabReferenceGlyph > & refs = reactionGlyph.getListOfMetabReferenceGlyphs();
 
-      // Substrate
-      const auto & subs = reaction.getChemEq().getSubstrates();
-      for (size_t i = 0; i < subs.size(); ++i)
-        if (subs[i].getMetabolite() == pMetab)
-          usageCount++;
-
-      // Produkte
-      const auto & prods = reaction.getChemEq().getProducts();
-      for (size_t i = 0; i < prods.size(); ++i)
-        if (prods[i].getMetabolite() == pMetab)
-          usageCount++;
-
-      // Modifier
-      const auto & mods = reaction.getChemEq().getModifiers();
-      for (size_t i = 0; i < mods.size(); ++i)
-        if (mods[i].getMetabolite() == pMetab)
-          usageCount++;
+      for (size_t i = 0; i < refs.size(); ++i)
+        {
+          if (refs[i].getMetabGlyphKey() == glyphKey)
+            {
+              usageCount++;
+            }
+        }
     }
 
+  // If glyph participates in >1 reactions it is splitable
   return (usageCount > 1);
+}
+
+bool CQLayoutScene::canMerge() const
+{
+  const QList< QGraphicsItem * > sel = selectedItems();
+  if (sel.size() < 2)
+    return false; // merge only if >= 2 items are selected
+
+  std::map< const CMetab *, int > metabCount;
+
+  for (QGraphicsItem * gi : sel)
+    {
+      // Only consider real styled items
+      auto * styled = dynamic_cast< CQStyledGraphicsItem * >(gi);
+      if (!styled)
+        return false; // foreign type in selection -> cannot merge
+
+      // Get layout key of the glyph
+      const QVariant vKey = gi->data(COPASI_LAYOUT_KEY);
+      if (!vKey.isValid())
+        return false;
+
+      const std::string key = vKey.toString().toStdString();
+      CKeyFactory * kf = CRootContainer::getKeyFactory();
+      if (!kf)
+        return false;
+
+      auto * go = dynamic_cast< CLGraphicalObject * >(kf->get(key));
+      auto * metabGlyph = dynamic_cast< CLMetabGlyph * >(go);
+      if (!metabGlyph)
+        return false; // only metabolites can be merged
+
+      const CMetab * metab = dynamic_cast< const CMetab * >(metabGlyph->getModelObject());
+      if (!metab)
+        return false;
+
+      metabCount[metab]++;
+    }
+
+  // Merge is possible if at least one species has 2 or more glyphs
+  for (const auto & [metab, count] : metabCount)
+    {
+      if (count >= 2)
+        return true;
+    }
+
+  return false;
+}
+
+void CQLayoutScene::mergeSelected()
+{
+  if (!canMerge())
+    return;
+
+  QList< QGraphicsItem * > sel = selectedItems();
+  CKeyFactory * kf = CRootContainer::getKeyFactory();
+  if (!kf)
+    return;
+
+  // Group glyphs by their species
+  std::map< const CMetab *, std::vector< const CLMetabGlyph * > > speciesGroups;
+  std::map< const CLMetabGlyph *, std::string > glyphKeys;
+
+  for (QGraphicsItem * gi : sel)
+    {
+      const QVariant vKey = gi->data(COPASI_LAYOUT_KEY);
+      if (!vKey.isValid())
+        continue;
+
+      const std::string key = vKey.toString().toStdString();
+      auto * go = dynamic_cast< CLGraphicalObject * >(kf->get(key));
+      auto * metabGlyph = dynamic_cast< const CLMetabGlyph * >(go);
+      if (!metabGlyph)
+        continue;
+
+      const CMetab * metab = dynamic_cast< const CMetab * >(metabGlyph->getModelObject());
+      if (!metab)
+        continue;
+
+      speciesGroups[metab].push_back(metabGlyph);
+      glyphKeys[metabGlyph] = key;
+    }
+
+  // Merge each group with at least 2 glyphs
+  for (auto & [metab, glyphs] : speciesGroups)
+    {
+      if (glyphs.size() < 2)
+        continue; // skip groups that cannot be merged
+
+      const std::string targetKey = glyphKeys[glyphs.front()];
+
+      // Collect keys of glyphs to remove
+      std::set< std::string > keysToRemove;
+      for (size_t i = 1; i < glyphs.size(); ++i)
+        keysToRemove.insert(glyphKeys[glyphs[i]]);
+
+      // Redirect references in reaction glyphs
+      CDataVector< CLReactionGlyph > & reactions = mpLayout->getListOfReactionGlyphs();
+      for (size_t r = 0; r < reactions.size(); ++r)
+        {
+          CDataVector< CLMetabReferenceGlyph > & refs = reactions[r].getListOfMetabReferenceGlyphs();
+          for (size_t i = 0; i < refs.size(); ++i)
+            {
+              const std::string & k = refs[i].getMetabGlyphKey();
+              if (keysToRemove.count(k))
+                refs[i].setMetabGlyphKey(targetKey);
+            }
+        }
+
+      // Remove text glyphs belonging to merged glyphs
+      CDataVector< CLTextGlyph > & textGlyphs = mpLayout->getListOfTextGlyphs();
+      for (size_t i = 0; i < textGlyphs.size();)
+        {
+          if (keysToRemove.count(textGlyphs[i].getGraphicalObjectKey()))
+            textGlyphs.remove(i);
+          else
+            ++i;
+        }
+
+      // Remove merged metabolite glyphs
+      CDataVector< CLMetabGlyph > & metabGlyphs = mpLayout->getListOfMetaboliteGlyphs();
+      for (size_t i = 0; i < metabGlyphs.size();)
+        {
+          if (keysToRemove.count(metabGlyphs[i].getKey()))
+            metabGlyphs.remove(i);
+          else
+            ++i;
+        }
+
+      // Reset split flag on target glyph and apply a small random offset
+      if (auto * goTarget = dynamic_cast< CLGraphicalObject * >(kf->get(targetKey)))
+        {
+          goTarget->setSplit(false);
+          CLPoint pos = goTarget->getPosition();
+          double dx = ((rand() % 5) - 2); // shift between -2 and +2
+          double dy = ((rand() % 5) - 2);
+          pos.setX(pos.getX() + dx);
+          pos.setY(pos.getY() + dy);
+          goTarget->setPosition(pos);
+        }
+    }
+
+  // Re-run spring layout and trigger scene update
+  CCopasiSpringLayout::Parameters p;
+  CCopasiSpringLayout l(mpLayout, &p);
+  l.finalizeState();
+
+  emit recreateNeeded();
 }

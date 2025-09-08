@@ -25,6 +25,12 @@ class CQStyledGraphicsItem : public QObject
 {
   Q_OBJECT
 public:
+  enum class LockState
+  {
+    AllLocked,
+    AllUnlocked,
+    Mixed
+  };
   CQStyledGraphicsItem(const CLGraphicalObject * go, const CLRenderResolver * resolver = NULL);
   virtual ~CQStyledGraphicsItem();
 
@@ -35,6 +41,7 @@ public:
 protected:
   void contextMenuEvent(QGraphicsSceneContextMenuEvent * event);
   void mouseReleaseEvent(QGraphicsSceneMouseEvent * event);
+  void mousePressEvent(QGraphicsSceneMouseEvent * event);
   virtual QVariant itemChange(GraphicsItemChange change, const QVariant & value);
   void paint(QPainter * painter, const QStyleOptionGraphicsItem * option, QWidget * widget) override;
 
