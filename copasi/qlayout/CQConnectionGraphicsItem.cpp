@@ -133,7 +133,7 @@ void CQConnectionGraphicsItem::paint(QPainter * painter,
                     {
                       QPointF point(elem.x, elem.y);
 
-                      // Prüfen, ob bereits ein Punkt existiert
+                      // Prï¿½fen, ob bereits ein Punkt existiert
                       bool exists = false;
                       for (auto child : pathItem->childItems())
                         {
@@ -150,15 +150,21 @@ void CQConnectionGraphicsItem::paint(QPainter * painter,
                       // Falls nicht, Punkt erzeugen
                       if (!exists)
                         {
-                          auto * bp = new CQBezierPointItem(pathItem, i, point, pathItem);
+                          auto * bp = new CQBezierPointItem(pathItem, i, point, NULL);
+                          bp->setFlag(QGraphicsItem::ItemIsMovable, true);
+                          bp->setZValue(1000);
                           // Parent ist pathItem, aber pathItem nicht selektierbar
                           pathItem->setFlag(QGraphicsItem::ItemIsSelectable, false);
+                          this->setFlag(QGraphicsItem::ItemIsSelectable, false);
+                          this->setFlag(QGraphicsItem::ItemIsMovable, false);
+
+                          scene()->addItem(bp);
                         }
                     }
                 }
             }
 
-          // Rekursion über Kinder
+          // Rekursion ï¿½ber Kinder
           const auto children = item->childItems();
           for (QGraphicsItem * child : children)
             stack.append(child);
