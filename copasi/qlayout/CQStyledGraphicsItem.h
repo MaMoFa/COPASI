@@ -19,12 +19,11 @@ class CLGraphicalObject;
 class CLStyle;
 class CLRenderResolver;
 class QMouseEvent;
-class CQStyledGraphicsItem : public QObject
-  , public CQCopasiGraphicsItem
-  , public QGraphicsItemGroup
+class CQStyledGraphicsItem : public QObject, public CQCopasiGraphicsItem, public QGraphicsItemGroup
 {
   Q_OBJECT
 public:
+  // Enumeration for the lock state of a set of selected items
   enum class LockState
   {
     AllLocked,
@@ -34,9 +33,8 @@ public:
   CQStyledGraphicsItem(const CLGraphicalObject * go, const CLRenderResolver * resolver = NULL);
   virtual ~CQStyledGraphicsItem();
 
-  void setLocked(bool locked);
-  //virtual void setShow(bool show);
-  void setSplit(bool split);
+  void setLocked(bool locked); // function to set the lock status of the graphical object
+  void setSplit(bool split);   // function to set the split status of the graphical object
 
 protected:
   void contextMenuEvent(QGraphicsSceneContextMenuEvent * event);
@@ -48,7 +46,7 @@ protected:
   bool mWasMoved;
 
 private:
-  const CLGraphicalObject * mpGraphicalObject;
+  const CLGraphicalObject * mpGraphicalObject; // pointer to the associated graphical object (used for split status)
 };
 
 #endif

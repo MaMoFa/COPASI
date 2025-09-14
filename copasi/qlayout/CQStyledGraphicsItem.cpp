@@ -45,12 +45,12 @@ CQStyledGraphicsItem::CQStyledGraphicsItem(const CLGraphicalObject* go, const CL
   setData(COPASI_LAYOUT_KEY, QString(go->getKey().c_str()));
 
   QString type;
-  mLocked = go->isLocked();
-  setData(Qt::UserRole + 1, type);
+  mLocked = go->isLocked(); // if true the object cannot be moved in the editor
+  setData(Qt::UserRole + 1, type); // store lock status
 
   QString type2;
-  mSplit = go->isSplit();
-  setData(Qt::UserRole + 1, type2);
+  mSplit = go->isSplit(); // if true the metabolite glyph is split into n parts where n is the number of participations in reactions
+  setData(Qt::UserRole + 1, type2); // store split status
 
   CQRenderConverter::fillGroupFromStyle(this, &go->getBoundingBox(), mpStyle, mpResolver);
 }
@@ -59,6 +59,7 @@ CQStyledGraphicsItem::~CQStyledGraphicsItem()
 {
 }
 
+// Enumeration for the lock state of a set of selected items
 enum class LockState
 {
   AllLocked,
@@ -84,25 +85,27 @@ void CQStyledGraphicsItem::contextMenuEvent(QGraphicsSceneContextMenuEvent * eve
   if (sel.empty())
     return;
 
-  QMenu menu;
+  QMenu menu; // Create context menu
 
   // Determine LockState
-  bool hasLocked = false;
-  bool hasUnlocked = false;
-  LockState lockState = LockState::AllLocked;
+  bool hasLocked = false; // At least one selected item is locked
+  bool hasUnlocked = false; // At least one selected item is unlocked
+  LockState lockState = LockState::AllLocked; // Initial assumption
 
+  // Check lock status of selected items
   for (QGraphicsItem * gi : sel)
     {
+      // Only CQStyledGraphicsItem have lock status
       if (auto * styled = dynamic_cast< CQStyledGraphicsItem * >(gi))
         {
           if (styled->mLocked)
-            hasLocked = true;
+            hasLocked = true; // At least one item is locked
           else
-            hasUnlocked = true;
+            hasUnlocked = true; // At least one item is unlocked
 
           if (hasLocked && hasUnlocked)
             {
-              lockState = LockState::Mixed;
+              lockState = LockState::Mixed; // Mixed lock status
               break;
             }
         }
@@ -110,7 +113,7 @@ void CQStyledGraphicsItem::contextMenuEvent(QGraphicsSceneContextMenuEvent * eve
 
   if (!(hasLocked && hasUnlocked))
     {
-      lockState = hasLocked ? LockState::AllLocked : LockState::AllUnlocked;
+      lockState = hasLocked ? LockState::AllLocked : LockState::AllUnlocked; // All locked or all unlocked
     }
 
   // Add Lock / Unlock / Invert actions
@@ -118,6 +121,7 @@ void CQStyledGraphicsItem::contextMenuEvent(QGraphicsSceneContextMenuEvent * eve
   QAction * lockAction = nullptr;
   QAction * unlockAction = nullptr;
 
+  // Add actions according to lock state
   switch (lockState)
     {
     case LockState::AllLocked:
@@ -135,12 +139,15 @@ void CQStyledGraphicsItem::contextMenuEvent(QGraphicsSceneContextMenuEvent * eve
 
   // Check if any selected item is splittable
   bool anySplittable = false;
+  // iterate over selected items
   for (QGraphicsItem * gi : sel)
     {
+      // iterate over selected items
       if (auto * styled = dynamic_cast< CQStyledGraphicsItem * >(gi))
         {
-          const CLMetabGlyph * metabGlyph = dynamic_cast< const CLMetabGlyph * >(styled->mpGraphicalObject);
-          if (metabGlyph && scene->canSplit(metabGlyph))
+          // Only CLMetabGlyph can be split
+          const CLMetabGlyph * metabGlyph = dynamic_cast< const CLMetabGlyph * >(styled->mpGraphicalObject); // Only metabolites can be split
+          if (metabGlyph && scene->canSplit(metabGlyph))                                                     // Check if splittable
             {
               anySplittable = true;
               break;
@@ -148,16 +155,18 @@ void CQStyledGraphicsItem::contextMenuEvent(QGraphicsSceneContextMenuEvent * eve
         }
     }
 
-  QAction * splitAction = anySplittable ? menu.addAction("Split") : nullptr;
-  QAction * mergeAction = scene->canMerge() ? menu.addAction("Merge") : nullptr;
+  QAction * splitAction = anySplittable ? menu.addAction("Split") : nullptr; // Add Split action if any selected item is splittable
+  QAction * mergeAction = scene->canMerge() ? menu.addAction("Merge") : nullptr; // Add Merge action if any selected items can be merged
 
   // Check if any selected item is a Metabolite glyph for deletion
   bool anyMetabSelected = false;
+  // iterate over selected items
   for (QGraphicsItem * gi : sel)
     {
+      // iterate over selected items
       if (auto * styled = dynamic_cast< CQStyledGraphicsItem * >(gi))
         {
-          const CLMetabGlyph * metabGlyph = dynamic_cast< const CLMetabGlyph * >(styled->mpGraphicalObject);
+          const CLMetabGlyph * metabGlyph = dynamic_cast< const CLMetabGlyph * >(styled->mpGraphicalObject); // Only metabolites can be deleted with associated reaction glyphs
           if (metabGlyph)
             {
               anyMetabSelected = true;
@@ -165,7 +174,7 @@ void CQStyledGraphicsItem::contextMenuEvent(QGraphicsSceneContextMenuEvent * eve
             }
         }
     }
-  QAction * deleteAction = anyMetabSelected ? menu.addAction("Delete") : nullptr;
+  QAction * deleteAction = anyMetabSelected ? menu.addAction("Delete") : nullptr; // Add Delete action if any selected item is a Metabolite glyph
 
   // Execute the menu
   QAction * selectedAction = menu.exec(event->screenPos());
@@ -174,41 +183,48 @@ void CQStyledGraphicsItem::contextMenuEvent(QGraphicsSceneContextMenuEvent * eve
     return; // Do nothing if user canceled menu
 
   // Lock/Unlock/Invert actions
+  // Invert lock status of selected items
   if (selectedAction == invertAction)
     {
+      // Iterate over selected items
       for (QGraphicsItem * gi : sel)
         {
           if (auto * styled = dynamic_cast< CQStyledGraphicsItem * >(gi))
-            styled->setLocked(!styled->mLocked);
+            styled->setLocked(!styled->mLocked); // Invert lock status
         }
     }
+  // Lock selected items
   else if (selectedAction == lockAction)
     {
+      // Iterate over selected items
       for (QGraphicsItem * gi : sel)
         {
           if (auto * styled = dynamic_cast< CQStyledGraphicsItem * >(gi))
-            styled->setLocked(true);
+            styled->setLocked(true); // Lock items
         }
     }
+  // Unlock selected items
   else if (selectedAction == unlockAction)
     {
+      // Iterate over selected items
       for (QGraphicsItem * gi : sel)
         {
           if (auto * styled = dynamic_cast< CQStyledGraphicsItem * >(gi))
-            styled->setLocked(false);
+            styled->setLocked(false); // Unlock items
         }
     }
 
   // Split selected splittable items
   else if (splitAction && selectedAction == splitAction)
     {
+      // Iterate over selected items
       for (QGraphicsItem * gi : sel)
         {
           if (auto * styled = dynamic_cast< CQStyledGraphicsItem * >(gi))
             {
-              const CLMetabGlyph * metabGlyph = dynamic_cast< const CLMetabGlyph * >(styled->mpGraphicalObject);
+              const CLMetabGlyph * metabGlyph = dynamic_cast< const CLMetabGlyph * >(styled->mpGraphicalObject); // Only metabolites can be split
               if (metabGlyph && scene->canSplit(metabGlyph))
-                scene->updateSplit(QString::fromStdString(metabGlyph->getKey()), true);
+                scene->updateSplit(QString::fromStdString(metabGlyph->getKey()), true); // Split metab glyph
             }
         }
     }
@@ -239,6 +255,7 @@ void CQStyledGraphicsItem::contextMenuEvent(QGraphicsSceneContextMenuEvent * eve
   event->accept();
 }
 
+// Set lock status and update scene and item flags
 void CQStyledGraphicsItem::setLocked(bool locked)
 {
   mLocked = locked;
@@ -249,6 +266,7 @@ void CQStyledGraphicsItem::setLocked(bool locked)
   update();
 }
 
+// Set split status and update scene
 void CQStyledGraphicsItem::setSplit(bool split)
 {
   mSplit = split;

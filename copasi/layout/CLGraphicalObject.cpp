@@ -306,3 +306,34 @@ bool CLGraphicalObject::hasValidModelReference() const
 
   return result;
 }
+
+// getters and setters for the attributes locked, show, and split
+bool CLGraphicalObject::isLocked() const
+{
+  return mLocked;
+}
+
+void CLGraphicalObject::setLocked(bool locked)
+{
+  mLocked = locked;
+}
+
+bool CLGraphicalObject::isShow() const
+{
+  return mShow;
+}
+
+void CLGraphicalObject::setShow(bool show)
+{
+  mShow = show;
+}
+
+void CLGraphicalObject::setSplit(bool split)
+{
+  mSplit = split;
+}
+
+bool CLGraphicalObject::isSplit() const
+{
+  return mSplit;
+}

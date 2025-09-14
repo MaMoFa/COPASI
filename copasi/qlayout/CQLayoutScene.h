@@ -49,14 +49,15 @@ public:
   CLayout* getCurrentLayout();
   const CLRenderInformationBase* getCurrentRenderInfo() const;
   void updatePosition(const QString& key, const QPointF& newPos);
-  void updateLock(const QString & key, bool locked);
-  void updateShow(const QString & kay, bool show);
-  void updateSplit(const QString & key, bool split);
-  void removeMetab(const CMetab * pMetab);
-  bool canSplit(const CLMetabGlyph * pMetabGlyph) const;
-  bool canMerge() const;
+  void updateLock(const QString & key, bool locked);     // function to update the lock status of a graphical object
+  void updateShow(const QString & kay, bool show);       // function to update the state whether to show control points of a reaction glyph
+  void updateSplit(const QString & key, bool split);     // function to update the split status of a metabglyph
+  void removeMetab(const CMetab * pMetab);               // function to remove a metabolite and its associated metabglyph(s) from the layout
+  bool canSplit(const CLMetabGlyph * pMetabGlyph) const; // function to check whether the selected metabglyph can be split
+  bool canMerge() const;                                 // function to check whether the selected metabglyphs can be merged
+  void moveCurve(CLGeneralGlyph * curve, const CLPoint & delta);
   public slots:
-  void mergeSelected();
+  void mergeSelected(); // function to merge mergable selected metabglyphs
   void recreate();
 signals:
   void recreateNeeded();

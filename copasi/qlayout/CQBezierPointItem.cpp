@@ -3,39 +3,42 @@
 #include <QBrush>
 #include <QPen>
 
-CQBezierPointItem::CQBezierPointItem(QGraphicsPathItem* pathItem, int index, const QPointF& pos, QGraphicsItem* parent)
-    : QGraphicsEllipseItem(-4, -4, 8, 8, parent), // Ellipse zentriert um pos
+// constructor
+CQBezierPointItem::CQBezierPointItem(QGraphicsPathItem* pathItem, int index, const QPointF& pos)
+    : QGraphicsEllipseItem(0, 0, 8, 8),
     mPathItem(pathItem),
     mIndex(index)
 {
     setPos(pos);
 
-    // Farbe / Brush / Pen
+    // color, brush, pen
     setBrush(QBrush(QColor(0, 128, 255)));
     setPen(QPen(Qt::NoPen));
 
-    // Flags: selektierbar, verschiebbar, meldet GeometryChanges
+    // flags: selectable, movable, sends geometrical changes
     setFlags(ItemIsSelectable | ItemIsMovable | ItemSendsGeometryChanges);
-
-    // Optional: Parent darf nicht selektierbar sein, sonst blockiert es Children
-    if (parent)
-        parent->setFlag(QGraphicsItem::ItemIsSelectable, false);
 }
 
 QVariant CQBezierPointItem::itemChange(GraphicsItemChange change, const QVariant& value)
 {
     if (change == ItemPositionChange && mPathItem)
     {
-        // Kurve aktualisieren
+        // update curve
         QPainterPath path = mPathItem->path();
         QPointF newPos = value.toPointF();
 
-        // Element am Index setzen
+        // set path for element with mIndex
         path.setElementPositionAt(mIndex, newPos.x(), newPos.y());
 
-        // Kurve übernehmen
+        // apply curve changes
         mPathItem->setPath(path);
     }
 
     return QGraphicsEllipseItem::itemChange(change, value);
+}
+
+// getter function for mIndex
+int CQBezierPointItem::getIndex() const
+{
+  return mIndex;
 }

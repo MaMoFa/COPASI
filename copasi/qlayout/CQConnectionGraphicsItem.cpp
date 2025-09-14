@@ -75,16 +75,17 @@ CQConnectionGraphicsItem::setUseFullShape(bool useFullShape)
   mUseFullShape = useFullShape;
 }
 
+// function to paint curves red if locked
 void CQConnectionGraphicsItem::paint(QPainter * painter,
                                      const QStyleOptionGraphicsItem * option,
                                      QWidget * widget)
 {
-  painter->save();
+  painter->save(); // save painter
 
   // paint child items (lines, paths)
   QGraphicsItemGroup::paint(painter, option, widget);
 
-  painter->restore();
+  painter->restore(); // restore painter
 
   //paint red if locked
   if (this->isLocked())
@@ -94,81 +95,23 @@ void CQConnectionGraphicsItem::paint(QPainter * painter,
       QPen redPen(Red, 4);
       painter->setPen(redPen);
 
+      // paint all child paths and lines
       QList< QGraphicsItem * > stack = this->childItems();
       while (!stack.isEmpty())
         {
           QGraphicsItem * item = stack.takeLast();
 
           if (auto pathItem = dynamic_cast< QGraphicsPathItem * >(item))
-            painter->drawPath(pathItem->path());
+            painter->drawPath(pathItem->path()); // draw the path
           else if (auto lineItem = dynamic_cast< QGraphicsLineItem * >(item))
-            painter->drawLine(lineItem->line());
-
+            painter->drawLine(lineItem->line()); // draw the line
+          
           const auto children = item->childItems();
           for (QGraphicsItem * child : children)
-            stack.append(child);
+            stack.append(child); // add child items to stack to process them as well
         }
 
-      painter->restore();
-    }
-
-  if (this->isShow())
-    {
-      QList< QGraphicsItem * > stack = this->childItems();
-
-      while (!stack.isEmpty())
-        {
-          QGraphicsItem * item = stack.takeLast();
-
-          if (auto * pathItem = dynamic_cast< QGraphicsPathItem * >(item))
-            {
-              const QPainterPath path = pathItem->path();
-
-              for (int i = 0; i < path.elementCount(); ++i)
-                {
-                  QPainterPath::Element elem = path.elementAt(i);
-
-                  // Nur Bezier-Kontrollpunkte (CurveToDataElement)
-                  if (elem.type == QPainterPath::CurveToDataElement)
-                    {
-                      QPointF point(elem.x, elem.y);
-
-                      // Pr�fen, ob bereits ein Punkt existiert
-                      bool exists = false;
-                      for (auto child : pathItem->childItems())
-                        {
-                          if (auto bp = dynamic_cast< CQBezierPointItem * >(child))
-                            {
-                              if (bp->pos() == point)
-                                {
-                                  exists = true;
-                                  break;
-                                }
-                            }
-                        }
-
-                      // Falls nicht, Punkt erzeugen
-                      if (!exists)
-                        {
-                          auto * bp = new CQBezierPointItem(pathItem, i, point, NULL);
-                          bp->setFlag(QGraphicsItem::ItemIsMovable, true);
-                          bp->setZValue(1000);
-                          // Parent ist pathItem, aber pathItem nicht selektierbar
-                          pathItem->setFlag(QGraphicsItem::ItemIsSelectable, false);
-                          this->setFlag(QGraphicsItem::ItemIsSelectable, false);
-                          this->setFlag(QGraphicsItem::ItemIsMovable, false);
-
-                          scene()->addItem(bp);
-                        }
-                    }
-                }
-            }
-
-          // Rekursion �ber Kinder
-          const auto children = item->childItems();
-          for (QGraphicsItem * child : children)
-            stack.append(child);
-        }
+      painter->restore(); // restore painter
     }
 }
 
@@ -189,6 +132,7 @@ void CQConnectionGraphicsItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event
     }
 }
 
+// value is new position (bezier control points are moved as well), its directed to CQBezierPointItem::itemChange
 QVariant CQConnectionGraphicsItem::itemChange(GraphicsItemChange change, const QVariant &value)
 {
   CQLayoutScene * currentScene = dynamic_cast<CQLayoutScene *>(scene());
@@ -215,8 +159,8 @@ CQConnectionGraphicsItem::CQConnectionGraphicsItem(const CLGlyphWithCurve* curve
   setData(Qt::UserRole + 1, type);
 
   setData(COPASI_LAYOUT_KEY, QString(curveGlyph->getKey().c_str()));
-  mLocked = curveGlyph->isLocked();
-  mShow = curveGlyph->isShow();
+  mLocked = curveGlyph->isLocked(); // initial lock status
+  mShow = curveGlyph->isShow();     // initial show status
 
   QSharedPointer<QPainterPath> path = getPath(curveGlyph->getCurve());
   mShape.addPath(*path);
@@ -300,48 +244,162 @@ CQConnectionGraphicsItem::CQConnectionGraphicsItem(const CLGlyphWithCurve* curve
     delete itemGroup;
 }
 
+// right click menu
 void CQConnectionGraphicsItem::contextMenuEvent(QGraphicsSceneContextMenuEvent * event)
 {
+  // create context menu
   QMenu menu;
-  QAction * lockAction = nullptr;
-  QAction * showAction = nullptr;
+  QAction * lockAction = nullptr; // to lock/unlock the item
+  QAction * showAction = nullptr; // to show/hide the bezier control points
 
-  lockAction = menu.addAction(mLocked ? "Unlock" : "Lock");
-  showAction = menu.addAction(mShow ? "Hide" : "Show");
+  lockAction = menu.addAction(mLocked ? "Unlock" : "Lock"); // change lock status
+  showAction = menu.addAction(mShow ? "Hide" : "Show");     // change show status
 
-  QAction * selectedAction = menu.exec(event->screenPos());
+  QAction * selectedAction = menu.exec(event->screenPos()); // execute menu
 
+  // process action selected
   if (selectedAction == lockAction)
     {
-      setLocked(!mLocked);
+      setLocked(!mLocked); // toggle lock status
     }
   if (selectedAction == showAction)
-  {
-      setShow(!mShow);
-  }
+    {
+      setShow(!mShow); // toggle show status
+      createBezierPointItem(); // create bezier control points if show is true
+    }
 
-  event->accept();
+  event->accept(); // mark event as handled
 }
 
+// function to set whether to show the control points of a reaction glyph
 void CQConnectionGraphicsItem::setShow(bool show)
 {
-  CQCopasiGraphicsItem::setShow(show);
-  mShow = show;
-  CQLayoutScene * currentScene = dynamic_cast< CQLayoutScene * >(scene());
-  if (currentScene)
-    currentScene->updateShow(data(COPASI_LAYOUT_KEY).toString(), mShow);
+  CQCopasiGraphicsItem::setShow(show);                                     // set show status in base class
+  mShow = show;                                                            // set show status
+  CQLayoutScene * currentScene = dynamic_cast< CQLayoutScene * >(scene()); // get the scene
+  if (currentScene)                                                        // check whether scene is valid
+    currentScene->updateShow(data(COPASI_LAYOUT_KEY).toString(), mShow); // update the show status in the layout
   update();
 }
 
+// function to set whether the item is locked
 void CQConnectionGraphicsItem::setLocked(bool locked)
   {
-  mLocked = locked;
-  setFlag(QGraphicsItem::ItemIsMovable, !mLocked);
-  CQLayoutScene * currentScene = dynamic_cast< CQLayoutScene * >(scene());
-  currentScene->updateLock(data(COPASI_LAYOUT_KEY).toString(), mLocked);
-  update();
-}
+  mLocked = locked;                                                        // set lock status
+    setFlag(QGraphicsItem::ItemIsMovable, !mLocked);                         // set movable flag according to lock status
+  CQLayoutScene * currentScene = dynamic_cast< CQLayoutScene * >(scene()); // get the scene
+    currentScene->updateLock(data(COPASI_LAYOUT_KEY).toString(), mLocked);   // update the lock status in the layout
+  update();                                                                // update the item (to show red border if locked)
+  }
 
 CQConnectionGraphicsItem::~CQConnectionGraphicsItem()
 {
+}
+
+// function to create the bezier control points
+void CQConnectionGraphicsItem::createBezierPointItem()
+{
+  if (this->isShow())
+    {
+      QList< QGraphicsItem * > stack = this->childItems(); // get all child items
+
+      // iterate over all child items
+      while (!stack.isEmpty())
+        {
+          QGraphicsItem * item = stack.takeLast(); // get last item
+
+          // check whether item is a path item
+          if (auto * pathItem = dynamic_cast< QGraphicsPathItem * >(item))
+            {
+              const QPainterPath path = pathItem->path(); // get the path
+
+              // iterate over all elements in the path
+              for (int i = 0; i < path.elementCount(); ++i)
+                {
+                  QPainterPath::Element elem = path.elementAt(i); // get the element
+
+                  // Only control points
+                  if (elem.type == QPainterPath::CurveToDataElement)
+                    {
+                      QPointF point(elem.x, elem.y); // get the point
+
+                      // check whether point exists
+                      bool exists = false;
+                      for (auto child : pathItem->childItems())
+                        {
+                          if (auto bp = dynamic_cast< CQBezierPointItem * >(child))
+                            {
+                              if (bp->getIndex() == i)
+                                {
+                                  exists = true;
+                                  break;
+                                }
+                            }
+                        }
+
+                      // create point if it does not exist
+                      if (!exists)
+                        {
+                          auto * bp = new CQBezierPointItem(pathItem, i, point); // create bezier point item
+                          bp->setFlag(QGraphicsItem::ItemIsMovable, true);       // set movable
+                          bp->setZValue(1000);                                   // set z value to be on top of other items
+
+                          mBezierPoints.push_back(bp); // add to list of bezier points
+
+                          // set curve unselectable and not movable
+                          this->setFlag(QGraphicsItem::ItemIsSelectable, false);
+                          this->setFlag(QGraphicsItem::ItemIsMovable, false);
+
+                          scene()->addItem(bp); // add to scene
+                        }
+                    }
+                }
+            }
+
+          // iterate over children
+          const auto children = item->childItems();
+          for (QGraphicsItem * child : children)
+            stack.append(child); // add children to stack
+        }
+    }
+  // if show is false, remove all bezier points
+  if (!this->isShow())
+  {
+    this->setFlag(QGraphicsItem::ItemIsSelectable, true); // set curve selectable
+    this->setFlag(QGraphicsItem::ItemIsMovable, true);    // set curve movable
+      // remove all bezier points from scene
+      for (auto* bp : mBezierPoints)
+      {
+          if (bp && scene())
+          {
+              scene()->removeItem(bp);
+          }
+      }
+      mBezierPoints.clear(); // clear the list of bezier points
+      return;
+  }
+}
+
+// getter and setter for the list of bezier control points
+std::vector<CQBezierPointItem*>& CQConnectionGraphicsItem::getBezierPoints()
+{
+    return mBezierPoints;
+}
+
+//not used
+//void CQConnectionGraphicsItem::setBezierPoints(const std::vector< CQBezierPointItem * > & points)
+//{
+//  mBezierPoints = points;
+//}
+
+// function to get the path item
+QGraphicsPathItem * CQConnectionGraphicsItem::getPathItem() const
+{
+  // iterate over all child items
+  for (auto * child : this->childItems())
+    {
+      if (auto * pathItem = dynamic_cast< QGraphicsPathItem * >(child)) // check whether item is a path item
+        return pathItem;
+    }
+  return nullptr; // if no pathItem
 }

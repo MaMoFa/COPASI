@@ -52,7 +52,7 @@
 #include "copasi/core/CRootContainer.h"
 #include "copasi/report/CKeyFactory.h"
 
-CQLayoutScene::CQLayoutScene(CLayout* layout, CDataModel* model, CLRenderInformationBase* renderInformation)
+CQLayoutScene::CQLayoutScene(CLayout * layout, CDataModel * model, CLRenderInformationBase * renderInformation)
   : QGraphicsScene()
   , mpLayout(layout)
   , mpRender(renderInformation)
@@ -179,8 +179,74 @@ CQLayoutScene::~CQLayoutScene()
 
 void CQLayoutScene::recreate()
 {
+  // structure to save information about each bezier curve
+  struct BezierInfo
+  {
+    QPainterPath path;                      // stores the current QPainterPath of the curve
+    std::vector< QPointF > bezierPositions; // stores positions of all bezier control points
+  };
+
+  // map to associate each curves unique key with its saved path and control points
+  std::map< QString, BezierInfo > savedCurves;
+
+  // iterate over all items in the scene
+  for (auto * item : items())
+    {
+      // only process connection curves (CQConnectionGraphicsItem)
+      if (auto * curve = dynamic_cast< CQConnectionGraphicsItem * >(item))
+        {
+          QString key = curve->data(COPASI_LAYOUT_KEY).toString(); // unique identifier for the curve
+          BezierInfo info;
+
+          // save the current QPainterPath if available
+          if (curve->getPathItem())
+            info.path = curve->getPathItem()->path();
+
+          // save positions of all Bézier control points
+          const auto & points = curve->getBezierPoints();
+          for (auto * bp : points)
+            info.bezierPositions.push_back(bp->pos());
+
+          // store the saved information in the map
+          savedCurves[key] = info;
+        }
+    }
+
+  // rebuild the scene from the layout data
   fillFromLayout(mpLayout);
+
+  // scene will be redrawn
   invalidate();
+
+  // restore saved paths and bezier point positions
+  for (auto * item : items())
+    {
+      if (auto * curve = dynamic_cast< CQConnectionGraphicsItem * >(item))
+        {
+          QString key = curve->data(COPASI_LAYOUT_KEY).toString();
+          auto it = savedCurves.find(key);
+          if (it != savedCurves.end())
+            {
+              // restore the saved QPainterPath
+              if (curve->getPathItem())
+                curve->getPathItem()->setPath(it->second.path);
+
+              // restore bezier control points
+              const auto & positions = it->second.bezierPositions;
+
+              // ensure all bezier points exist
+              curve->createBezierPointItem();
+
+              const auto & newPoints = curve->getBezierPoints();
+
+              // update each points position
+              for (size_t i = 0; i < positions.size() && i < newPoints.size(); ++i)
+                {
+                  newPoints[i]->setPos(positions[i]);
+                }
+            }
+        }
+    }
 }
 
 void CQLayoutScene::addGlyph(const CLGraphicalObject* go)
@@ -502,6 +568,7 @@ void CQLayoutScene::updateShow(const QString & key, bool show)
   obj->setShow(show);
 }
 
+// Function to check whether the selected metabglyph can be split
 bool CQLayoutScene::isSideMetabolite(const CMetab * m) const
 {
   size_t count = 0;
@@ -538,6 +605,7 @@ bool CQLayoutScene::isSideMetabolite(const CMetab * m) const
   return count == 1;
 }
 
+// Function to update the split status of a metabglyph (remove initial metabglyph and add side metabglyphs if split)
 void CQLayoutScene::updateSplit(const QString & key, bool split)
 {
   CKeyFactory * kf = CRootContainer::getKeyFactory();
@@ -559,10 +627,11 @@ void CQLayoutScene::updateSplit(const QString & key, bool split)
 if (split)
     {
       std::set< const CMetab * > sideMetabs;
+      // mark metab as side metabolite
       sideMetabs.insert(dynamic_cast< CMetab * >(pMetabGlyph->getModelObject()));
-
+      // remove initial metabglyph
       removeMetab(dynamic_cast< CMetab * >(pMetabGlyph->getModelObject()));
-
+      // add side metabglyphs
       mpSpringLayout->addSideMetabs(mpLayout, sideMetabs);
     }
 
@@ -593,6 +662,8 @@ void CQLayoutScene::updatePosition(const QString& key, const QPointF& newPos)
 
   emit recreateNeeded();
 }
+
+// Function to remove a metabolite and its associated metabglyph(s) from the layout
 void CQLayoutScene::removeMetab(const CMetab * pMetab)
 {
   if (!mpLayout || !pMetab)
@@ -661,6 +732,7 @@ void CQLayoutScene::removeMetab(const CMetab * pMetab)
   emit recreateNeeded();
 }
 
+// Check if a metabglyph can be split
 bool CQLayoutScene::canSplit(const CLMetabGlyph * pMetabGlyph) const
 {
   if (!pMetabGlyph)
@@ -738,9 +810,11 @@ bool CQLayoutScene::canMerge() const
 
 void CQLayoutScene::mergeSelected()
 {
+  // Check if merge is possible
   if (!canMerge())
     return;
 
+  // Get selected items
   QList< QGraphicsItem * > sel = selectedItems();
   CKeyFactory * kf = CRootContainer::getKeyFactory();
   if (!kf)
@@ -750,6 +824,7 @@ void CQLayoutScene::mergeSelected()
   std::map< const CMetab *, std::vector< const CLMetabGlyph * > > speciesGroups;
   std::map< const CLMetabGlyph *, std::string > glyphKeys;
 
+  // Iterate over selected items
   for (QGraphicsItem * gi : sel)
     {
       const QVariant vKey = gi->data(COPASI_LAYOUT_KEY);
@@ -766,6 +841,7 @@ void CQLayoutScene::mergeSelected()
       if (!metab)
         continue;
 
+      // Add glyph to the corresponding species group
       speciesGroups[metab].push_back(metabGlyph);
       glyphKeys[metabGlyph] = key;
     }
@@ -787,6 +863,7 @@ void CQLayoutScene::mergeSelected()
       CDataVector< CLReactionGlyph > & reactions = mpLayout->getListOfReactionGlyphs();
       for (size_t r = 0; r < reactions.size(); ++r)
         {
+          // Check each reference
           CDataVector< CLMetabReferenceGlyph > & refs = reactions[r].getListOfMetabReferenceGlyphs();
           for (size_t i = 0; i < refs.size(); ++i)
             {

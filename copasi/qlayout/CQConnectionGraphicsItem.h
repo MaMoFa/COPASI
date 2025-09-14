@@ -22,6 +22,7 @@
 #include <QStyleOptionGraphicsItem>
 #include <copasi/layout/CLCurve.h>
 #include <copasi/qlayout/CQCopasiGraphicsItem.h>
+#include "CQBezierPointItem.h"
 
 class CLGlyphWithCurve;
 class CLStyle;
@@ -29,22 +30,29 @@ class CQConnectionGraphicsItem : public QObject, public CQCopasiGraphicsItem, pu
 {
   Q_OBJECT
 public:
-  void setLocked(bool locked);
-  virtual void setShow(bool show);
+  QGraphicsPathItem * getPathItem() const; // function to get the QGraphicsPathItem representing the connection
+  void setLocked(bool locked); // function to set the lock status of the connection
+  virtual void setShow(bool show); // function to set the state whether to show control points of the connection
+  void createBezierPointItem();    // function to create control points for the bezier curve
+  std::vector< CQBezierPointItem * > & getBezierPoints(); // function to get the list of control points for the bezier curve
+  //void setBezierPoints(const std::vector< CQBezierPointItem * > & points); // function to set the list of control points for the bezier curve (not used)
   CQConnectionGraphicsItem(const CLGlyphWithCurve * glyph, const CLRenderResolver * resolver = NULL);
   virtual ~CQConnectionGraphicsItem();
   static QSharedPointer<QPainterPath> getPath(const CLCurve& curve);
   virtual QPainterPath shape() const;
   void setUseFullShape(bool useFullShape);
 protected:
-  virtual void paint(QPainter *painter, const QStyleOptionGraphicsItem *option = new QStyleOptionGraphicsItem() , QWidget *widget = 0);
-  void contextMenuEvent(QGraphicsSceneContextMenuEvent * event);
+  virtual void paint(QPainter * painter, const QStyleOptionGraphicsItem * option = new QStyleOptionGraphicsItem(), QWidget * widget = 0); // paint function for lock status
+  void contextMenuEvent(QGraphicsSceneContextMenuEvent * event); // right click menu
   void mouseReleaseEvent(QGraphicsSceneMouseEvent* event);
-  virtual QVariant itemChange(GraphicsItemChange change, const QVariant &value);
+  virtual QVariant itemChange(GraphicsItemChange change, const QVariant & value); // value is new position
   bool mWasMoved;
   bool mUseFullShape;
   QPainterPath mShape;
   QPainterPath mFullShape;
+
+private:
+  std::vector< CQBezierPointItem * > mBezierPoints; // list of control points for the bezier curve
 };
 
 #endif
