@@ -311,48 +311,74 @@ void CQConnectionGraphicsItem::createBezierPointItem()
           // check whether item is a path item
           if (auto * pathItem = dynamic_cast< QGraphicsPathItem * >(item))
             {
-              const QPainterPath path = pathItem->path(); // get the path
+              const QPainterPath itemPath = pathItem->path(); // get the path
+              const QPainterPath path = mFullShape;
 
               // iterate over all elements in the path
+              QPainterPath::ElementType lastType = QPainterPath::MoveToElement;
               for (int i = 0; i < path.elementCount(); ++i)
                 {
                   QPainterPath::Element elem = path.elementAt(i); // get the element
+                  QPointF point(elem.x, elem.y);                  // get the point
 
-                  // Only control points
-                  if (elem.type == QPainterPath::CurveToDataElement)
+                  // Only control points, we gotta skip the 2nd curve to data, as it is the endpoint!
+                  // controlpoint 1 = QPainterPath::CurveToElement
+                  // controlpoint 2 = QPainterPath::CurveToDataElement
+                  // endPoint = QPainterPath::CurveToDataElement
+
+                  if (lastType == QPainterPath::CurveToDataElement && elem.type == QPainterPath::CurveToDataElement)
                     {
-                      QPointF point(elem.x, elem.y); // get the point
+                      continue;
+                    }
 
-                      // check whether point exists
-                      bool exists = false;
-                      for (auto child : pathItem->childItems())
+                  // for now only allow to move control points of bezier curves
+                  if (elem.type == QPainterPath::CurveToElement || elem.type == QPainterPath::CurveToDataElement)
+                    {
+
+                      int index = -1;
+                      for (int j = 0; j < itemPath.elementCount(); ++j)
                         {
-                          if (auto bp = dynamic_cast< CQBezierPointItem * >(child))
+                          auto current = itemPath.elementAt(j);
+                          if (current.type != elem.type)
+                            continue;
+                          if (QLineF(point, QPointF(current.x, current.y)).length() < 1e-9)
                             {
-                              if (bp->getIndex() == i)
-                                {
-                                  exists = true;
-                                  break;
-                                }
+                              index = j;
+                              break;
                             }
                         }
 
-                      // create point if it does not exist
-                      if (!exists)
+                      if (index < 0)
+                        continue;
+
+                      bool exist = false;
+                      for (auto * bp : mBezierPoints)
                         {
-                          auto * bp = new CQBezierPointItem(pathItem, i, point); // create bezier point item
-                          bp->setFlag(QGraphicsItem::ItemIsMovable, true);       // set movable
-                          bp->setZValue(1000);                                   // set z value to be on top of other items
-
-                          mBezierPoints.push_back(bp); // add to list of bezier points
-
-                          // set curve unselectable and not movable
-                          this->setFlag(QGraphicsItem::ItemIsSelectable, false);
-                          this->setFlag(QGraphicsItem::ItemIsMovable, false);
-
-                          scene()->addItem(bp); // add to scene
+                          if (bp->getInitialPoint() == point)
+                            {
+                              exist = true;
+                              break;
+                            }
                         }
+
+                      if (exist)
+                        continue;
+
+                      // create point if it does not exist
+                      auto * bp = new CQBezierPointItem(pathItem, point); // create bezier point item
+                      bp->setFlag(QGraphicsItem::ItemIsMovable, true);           // set movable
+                      bp->setZValue(1000);                                       // set z value to be on top of other items
+
+                      mBezierPoints.push_back(bp); // add to list of bezier points
+
+                      // set curve un-selectable and not movable
+                      this->setFlag(QGraphicsItem::ItemIsSelectable, false);
+                      this->setFlag(QGraphicsItem::ItemIsMovable, false);
+
+                      scene()->addItem(bp); // add to scene
                     }
+
+                  lastType = elem.type;
                 }
             }
 
