@@ -2,11 +2,13 @@
 #include <QGraphicsPathItem>
 #include <QBrush>
 #include <QPen>
+#include <copasi/layout/CLBase.h>
 
 // constructor
-CQBezierPointItem::CQBezierPointItem(QGraphicsPathItem* pathItem, const QPointF& pos)
+CQBezierPointItem::CQBezierPointItem(QGraphicsPathItem * pathItem, CLPoint * modelPoint, const QPointF & pos)
   : QGraphicsEllipseItem(0, 0, 8, 8)
   , mPathItem(pathItem)
+  , mpModelPoint(modelPoint)
   , mInitialPoint(pos)
 {
     setPos(pos);
@@ -21,56 +23,94 @@ CQBezierPointItem::CQBezierPointItem(QGraphicsPathItem* pathItem, const QPointF&
 
 QVariant CQBezierPointItem::itemChange(GraphicsItemChange change, const QVariant& value)
 {
-    if (change == ItemPositionChange && mPathItem)
+  if (change == ItemPositionChange)
     {
-        // update curve
-        QPainterPath path = mPathItem->path();
-        QPointF newPos = value.toPointF();
-        auto indices = findPointIndices(path, mInitialPoint);
-        if (indices.empty())
-          return QGraphicsEllipseItem::itemChange(change, value);
-        
-        // set path for all indices
-        for (auto index : indices)
-          {
-            path.setElementPositionAt(index, newPos.x(), newPos.y());
-          }
-        
-        // apply curve changes
-        mPathItem->setPath(path);
+      QPointF newPos = value.toPointF();
 
-        // remember new pos
-        mInitialPoint = newPos;
+      if (mpModelPoint)
+        {
+          mpModelPoint->setX(newPos.x());
+          mpModelPoint->setY(newPos.y());
+        }
+
+      if (mPathItem)
+        {
+          QPainterPath path = mPathItem->path();
+          for (int i = 0; i < path.elementCount(); ++i)
+            {
+              QPainterPath::Element elem = path.elementAt(i);
+              if (QLineF(QPointF(elem.x, elem.y), mInitialPoint).length() < 1e-6)
+                {
+                  path.setElementPositionAt(i, newPos.x(), newPos.y());
+                  break;
+                }
+            }
+          mPathItem->setPath(path);
+        }
+
+      mInitialPoint = newPos;
     }
+
+    //if (change == ItemPositionChange && mPathItem)
+    //{
+    //    // update curve
+    //    QPainterPath path = mPathItem->path();
+    //    QPointF newPos = value.toPointF();
+    //    auto indices = findPointIndices(path, mInitialPoint);
+    //    if (indices.empty())
+    //      return QGraphicsEllipseItem::itemChange(change, value);
+    //    
+    //    // set path for all indices
+    //    for (auto index : indices)
+    //      {
+    //        path.setElementPositionAt(index, newPos.x(), newPos.y());
+    //      }
+    //    
+    //    // apply curve changes
+    //    mPathItem->setPath(path);
+
+    //    // remember new pos
+    //    mInitialPoint = newPos;
+    //}
 
     return QGraphicsEllipseItem::itemChange(change, value);
 }
 
-QList< int > CQBezierPointItem::findPointIndices(const QPainterPath & path, const QPointF & targetPoint, qreal tolerance /*= 1e-9*/)
-{
-  QList< int > indices;
-  for (int i = 0; i < path.elementCount(); ++i)
-    {
-      QPainterPath::Element elem = path.elementAt(i);
-      QPointF point(elem.x, elem.y);
-      if (QLineF(point, targetPoint).length() < tolerance)
-        {
-          indices.append(i);
-        }
-    }
-  return indices; // Not found
-}
-
-// getter function for mIndex
-int CQBezierPointItem::getIndex() const
-{
-  auto indices = findPointIndices(mPathItem->path(), mInitialPoint);
-  if (indices.empty())
-    return -1;
-  return indices.first();
-}
+//QList< int > CQBezierPointItem::findPointIndices(const QPainterPath & path, const QPointF & targetPoint, qreal tolerance /*= 1e-9*/)
+//{
+//  QList< int > indices;
+//  for (int i = 0; i < path.elementCount(); ++i)
+//    {
+//      QPainterPath::Element elem = path.elementAt(i);
+//      QPointF point(elem.x, elem.y);
+//      if (QLineF(point, targetPoint).length() < tolerance)
+//        {
+//          indices.append(i);
+//        }
+//    }
+//  return indices; // Not found
+//}
+//
+//// getter function for mIndex
+//int CQBezierPointItem::getIndex() const
+//{
+//  auto indices = findPointIndices(mPathItem->path(), mInitialPoint);
+//  if (indices.empty())
+//    return -1;
+//  return indices.first();
+//}
 
 QPointF CQBezierPointItem::getInitialPoint() const
 {
   return mInitialPoint;
+}
+
+CLPoint * CQBezierPointItem::getModelPoint() const
+{
+  return mpModelPoint;
+}
+
+void CQBezierPointItem::setModelPoint(CLPoint * modelPoint)
+{
+  mpModelPoint = modelPoint;
 }

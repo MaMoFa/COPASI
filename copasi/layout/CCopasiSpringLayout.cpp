@@ -328,31 +328,29 @@ bool CCopasiSpringLayout::setState(const std::vector<double> & vars)
   if (vars.size() < mVarDescription.size())
     return false;
 
-  std::vector<UpdateAction>::const_iterator it, itEnd = mUpdateActions.end();
-
-  for (it = mUpdateActions.begin(); it != itEnd; ++it)
+  for (auto & it : mUpdateActions)
     {
-      if (dynamic_cast<CLGraphicalObject*>(it->mpTarget)->isLocked())
-      {
-          continue;
-      }
-      switch (it->mAction)
+      auto gObj = dynamic_cast< CLGraphicalObject * >(it.mpTarget);
+      if (gObj && gObj->isLocked())
+        continue;
+
+      switch (it.mAction)
         {
           case UpdateAction::COMPARTMENT_4V:
-            ((CLCompartmentGlyph*)(it->mpTarget))->setX(vars[it->mIndex1]);
-            ((CLCompartmentGlyph*)(it->mpTarget))->setY(vars[it->mIndex2]);
-            ((CLCompartmentGlyph*)(it->mpTarget))->setWidth(vars[it->mIndex3]);
-            ((CLCompartmentGlyph*)(it->mpTarget))->setHeight(vars[it->mIndex4]);
+            ((CLCompartmentGlyph*)(it.mpTarget))->setX(vars[it.mIndex1]);
+            ((CLCompartmentGlyph*)(it.mpTarget))->setY(vars[it.mIndex2]);
+            ((CLCompartmentGlyph*)(it.mpTarget))->setWidth(vars[it.mIndex3]);
+            ((CLCompartmentGlyph*)(it.mpTarget))->setHeight(vars[it.mIndex4]);
             break;
 
           case UpdateAction::POSITION_2V:
-            ((CLGraphicalObject*)(it->mpTarget))->setX(vars[it->mIndex1]);
-            ((CLGraphicalObject*)(it->mpTarget))->setY(vars[it->mIndex2]);
+            ((CLGraphicalObject*)(it.mpTarget))->setX(vars[it.mIndex1]);
+            ((CLGraphicalObject*)(it.mpTarget))->setY(vars[it.mIndex2]);
             break;
 
           case UpdateAction::REACTION_2V:
-            ((CLReactionGlyph*)(it->mpTarget))->setX(vars[it->mIndex1]);
-            ((CLReactionGlyph*)(it->mpTarget))->setY(vars[it->mIndex2]);
+            ((CLReactionGlyph*)(it.mpTarget))->setX(vars[it.mIndex1]);
+            ((CLReactionGlyph*)(it.mpTarget))->setY(vars[it.mIndex2]);
             break;
 
           default:

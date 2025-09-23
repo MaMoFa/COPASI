@@ -30,12 +30,15 @@ class CQConnectionGraphicsItem : public QObject, public CQCopasiGraphicsItem, pu
 {
   Q_OBJECT
 public:
-  QGraphicsPathItem * getPathItem() const; // function to get the QGraphicsPathItem representing the connection
   void setLocked(bool locked); // function to set the lock status of the connection
   virtual void setShow(bool show); // function to set the state whether to show control points of the connection
   void createBezierPointItem();    // function to create control points for the bezier curve
-  std::vector< CQBezierPointItem * > & getBezierPoints(); // function to get the list of control points for the bezier curve
-  //void setBezierPoints(const std::vector< CQBezierPointItem * > & points); // function to set the list of control points for the bezier curve (not used)
+  void createBezierPointsFromPainterPath();
+  void mapBezierPointsToModelCurve();
+  void removeAllBezierPoints();
+  std::vector< CQBezierPointItem * > & getBezierPoints();
+  QGraphicsPathItem * getPathItem() const;
+
   CQConnectionGraphicsItem(const CLGlyphWithCurve * glyph, const CLRenderResolver * resolver = NULL);
   virtual ~CQConnectionGraphicsItem();
   static QSharedPointer<QPainterPath> getPath(const CLCurve& curve);
@@ -53,6 +56,7 @@ protected:
 
 private:
   std::vector< CQBezierPointItem * > mBezierPoints; // list of control points for the bezier curve
+  std::vector< std::pair< QGraphicsPathItem *, const CLCurve * > > mCurveItems;
 };
 
 #endif
