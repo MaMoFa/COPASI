@@ -135,7 +135,6 @@ void CQConnectionGraphicsItem::mouseReleaseEvent(QGraphicsSceneMouseEvent *event
     }
 }
 
-// value is new position (bezier control points are moved as well), its directed to CQBezierPointItem::itemChange
 QVariant CQConnectionGraphicsItem::itemChange(GraphicsItemChange change, const QVariant &value)
 {
   CQLayoutScene * currentScene = dynamic_cast<CQLayoutScene *>(scene());
