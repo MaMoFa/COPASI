@@ -47,6 +47,14 @@ public slots:
   void slotSaveToFile(const QString& fileName);
   void slotLayoutChanged(int);
   void slotRenderInformationChanged(int);
+
+  /**
+   * @brief Switch between different selection modes in the view.
+   * If enabled, the mode is set to "Drag", allowing the user to pan the
+   * scene by dragging. If disabled, the mode is set to "Rubber Band",
+   * allowing the user to select multiple items using a selection rectangle.
+   * @param checked True if drag mode is active, false if rubber band mode is active.
+   */
   void slotSelectionMode(bool);
 
 signals:
@@ -66,7 +74,7 @@ protected:
   bool mIgnoreEvents;
   CDataModel* mpDataModel;
 
-  QAction* mpSelectionMode;
+  QAction* mpSelectionMode; ///< Toggle action for switching selection mode (drag vs. rubber band)
 
 private:
   void createActions();

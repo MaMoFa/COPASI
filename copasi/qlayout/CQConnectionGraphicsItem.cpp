@@ -181,7 +181,7 @@ CQConnectionGraphicsItem::CQConnectionGraphicsItem(const CLGlyphWithCurve* curve
         CQRenderConverter::applyStyle(item, &curveGlyph->getBoundingBox(), mpStyle->getGroup(), resolver, itemGroup);
 
       addToGroup(itemGroup);
-      mCurveItems.emplace_back(item, &curveGlyph->getCurve());
+      // mCurveItems.emplace_back(item, &curveGlyph->getCurve());
     }
 
   const CLReactionGlyph* reaction = dynamic_cast<const CLReactionGlyph*>(curveGlyph);
@@ -207,7 +207,7 @@ CQConnectionGraphicsItem::CQConnectionGraphicsItem(const CLGlyphWithCurve* curve
                                             mpStyle == NULL ? NULL :  mpStyle->getGroup()
                                               : style->getGroup(), resolver, itemGroup);
               addToGroup(itemGroup);
-              mCurveItems.emplace_back(item, &curveGlyph->getCurve());
+              // mCurveItems.emplace_back(item, &curveGlyph->getCurve());
             }
         }
     }
@@ -235,7 +235,7 @@ CQConnectionGraphicsItem::CQConnectionGraphicsItem(const CLGlyphWithCurve* curve
                                             mpStyle == NULL ? NULL :  mpStyle->getGroup()
                                               : style->getGroup(), resolver, itemGroup);
               addToGroup(itemGroup);
-              mCurveItems.emplace_back(item, &curveGlyph->getCurve());
+              // mCurveItems.emplace_back(item, &curveGlyph->getCurve());
             }
         }
     }
@@ -308,7 +308,7 @@ void CQConnectionGraphicsItem::createBezierPointItem()
   if (this->isShow())
     {
       createBezierPointsFromPainterPath();
-      mapBezierPointsToModelCurve();
+      //mapBezierPointsToModelCurve();
     }
   // if show is false, remove all bezier points
   if (!this->isShow())
@@ -336,39 +336,39 @@ void CQConnectionGraphicsItem::removeAllBezierPoints()
   return;
 }
 
-void CQConnectionGraphicsItem::mapBezierPointsToModelCurve()
-{
-  for (auto & [item, curve] : mCurveItems)
-    {
-      if (curve == nullptr)
-        continue;
-
-      for (size_t k = 0; k < curve->getNumCurveSegments(); ++k)
-        {
-          const CLLineSegment * seg = curve->getSegmentAt(k);
-          if (!seg->isBezier())
-            continue;
-
-          for (auto * bp : mBezierPoints)
-            {
-              QPointF point = bp->getInitialPoint();
-
-              auto match = [&](const CLPoint & cp) -> bool {
-                return QLineF(point, QPointF(cp.getX(), cp.getY())).length() < 1e-6;
-              };
-
-              if (match(seg->getBase1()))
-                {
-                  bp->setModelPoint(&const_cast< CLPoint & >(seg->getBase1()));
-                }
-              else if (match(seg->getBase2()))
-                {
-                  bp->setModelPoint(&const_cast< CLPoint & >(seg->getBase2()));
-                }
-            }
-        }
-    }
-}
+//void CQConnectionGraphicsItem::mapBezierPointsToModelCurve()
+//{
+//  for (auto & [item, curve] : mCurveItems)
+//    {
+//      if (curve == nullptr)
+//        continue;
+//
+//      for (size_t k = 0; k < curve->getNumCurveSegments(); ++k)
+//        {
+//          const CLLineSegment * seg = curve->getSegmentAt(k);
+//          if (!seg->isBezier())
+//            continue;
+//
+//          for (auto * bp : mBezierPoints)
+//            {
+//              QPointF point = bp->getInitialPoint();
+//
+//              auto match = [&](const CLPoint & cp) -> bool {
+//                return QLineF(point, QPointF(cp.getX(), cp.getY())).length() < 1e-6;
+//              };
+//
+//              if (match(seg->getBase1()))
+//                {
+//                  bp->setModelPoint(&const_cast< CLPoint & >(seg->getBase1()));
+//                }
+//              else if (match(seg->getBase2()))
+//                {
+//                  bp->setModelPoint(&const_cast< CLPoint & >(seg->getBase2()));
+//                }
+//            }
+//        }
+//    }
+//}
 
 void CQConnectionGraphicsItem::createBezierPointsFromPainterPath()
 {

@@ -122,8 +122,6 @@ void CLayoutEngine::calcForces(std::vector<double> & state, std::vector<double> 
     {
       if (mStopRequested)
         break;
-      //if (mpLayout->isVariableLocked(i))
-      //    continue;
 
       store = state[i];
       //std::cout << "var " << store;

@@ -568,43 +568,6 @@ void CQLayoutScene::updateShow(const QString & key, bool show)
   obj->setShow(show);
 }
 
-// Function to check whether the selected metabglyph can be split
-bool CQLayoutScene::isSideMetabolite(const CMetab * m) const
-{
-  size_t count = 0;
-
-  // iterate through all reactions of the model
-  const auto & reactions = mpLayout->getListOfReactions();
-  for (const auto & reaction : reactions)
-    {
-      // substrates
-      const auto & subs = reaction->getChemEq().getSubstrates();
-      for (const auto & s : subs)
-        {
-          if (s.getMetabolite() == m)
-            ++count;
-        }
-
-      // products
-      const auto & prods = reaction->getChemEq().getProducts();
-      for (const auto & p : prods)
-        {
-          if (p.getMetabolite() == m)
-            ++count;
-        }
-
-      // modifiers
-      const auto & mods = reaction->getChemEq().getModifiers();
-      for (const auto & mod : mods)
-        {
-          if (mod.getMetabolite() == m)
-            return true;
-        }
-    }
-
-  return count == 1;
-}
-
 // Function to update the split status of a metabglyph (remove initial metabglyph and add side metabglyphs if split)
 void CQLayoutScene::updateSplit(const QString & key, bool split)
 {

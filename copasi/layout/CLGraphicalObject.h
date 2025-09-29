@@ -62,21 +62,64 @@ protected:
   std::string mObjectRole;
 
   CLBoundingBox mBBox;
-  bool mLocked; // if true the object cannot be moved in the editor
-  bool mShow;   // if true the bezier handles are shown in the editor
-  bool mSplit;  // if true the metabolite glyph is split into n parts where n is the number of participations in reactions
+
+  /**
+   * @brief If true, the object cannot be moved in the editor.
+   */
+  bool mLocked;
+
+  /**
+   * @brief If true, the bezier points are shown in the editor.
+   */
+  bool mShow;
+
+  /**
+   * @brief If true, the metabolite glyph is split into n parts,
+   * where n is the number of participations in reactions.
+   */
+  bool mSplit;
 
 
   CLGraphicalObject(const CLGraphicalObject & src);
 
 public:
-  // get and set methods for the attributes locked, show, and split
+
+  /**
+   * @brief Checks whether the object is locked (immovable).
+   * @return True if locked, false otherwise.
+   */
   bool isLocked() const;
+
+  /**
+   * @brief Locks or unlocks the object.
+   * @param locked True to lock, false to unlock.
+   */
   void setLocked(bool locked);
+
+  /**
+   * @brief Checks whether bezier points are visible in the editor.
+   * @return True if points are visible, false otherwise.
+   */
   bool isShow() const;
+
+  /**
+   * @brief Shows or hides bezier points in the editor.
+   * @param show True to show points, false to hide them.
+   */
   void setShow(bool show);
-  void setSplit(bool split);
+
+  /**
+   * @brief Checks whether the metabolite glyph is split.
+   * @return True if split, false otherwise.
+   */
   bool isSplit() const;
+
+  /**
+   * @brief Splits or does nothing with the metabolite glyph.
+   * @param split True to split, false otherwise.
+   */
+  void setSplit(bool split);
+  
 
   /**
    * Static method to create a CDataObject based on the provided data

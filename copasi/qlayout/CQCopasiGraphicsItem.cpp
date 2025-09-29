@@ -54,3 +54,33 @@ bool CQCopasiGraphicsItem::isValid() const
 {
   return mIsValid;
 }
+
+bool CQCopasiGraphicsItem::isLocked() const
+{
+  return mLocked;
+}
+
+bool CQCopasiGraphicsItem::isShow() const
+{
+  return mShow;
+}
+
+bool CQCopasiGraphicsItem::isSplit() const
+{
+  return mSplit;
+}
+
+void CQCopasiGraphicsItem::setLocked(bool locked)
+{
+  mLocked = locked;
+}
+
+void CQCopasiGraphicsItem::setShow(bool show)
+{
+  mShow = show;
+}
+
+void CQCopasiGraphicsItem::setSplit(bool split)
+{
+  mSplit = split;
+}

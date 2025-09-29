@@ -35,6 +35,13 @@ public:
     //double initialValue;
     double lowerBoundary;
     double upperBoundary;
+
+    /**
+     * @brief Indicates whether the object is locked (immovable).
+     *
+     * If true, the object cannot be moved.
+     * Default: false
+     */
     bool isLocked = false;
   };
 

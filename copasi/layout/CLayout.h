@@ -246,15 +246,17 @@ public:
   void setLastUsedRenderInformation(const std::string & renderInformation);
 
   /**
-   * Neue Methode, um die Liste der Reaktionen zurückzugeben
-   */
+  * @brief Returns the list of reactions.
+  * 
+  * @return A constant reference to a vector of CReaction pointers.
+  */
   const std::vector<CReaction*>& getListOfReactions() const
   {
     return mReactions;
   }
 
 private:
-  // Liste der Reaktionen
+  ///  List of all reactions.
   std::vector<CReaction*> mReactions;
 
 protected:

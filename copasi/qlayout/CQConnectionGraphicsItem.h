@@ -30,13 +30,53 @@ class CQConnectionGraphicsItem : public QObject, public CQCopasiGraphicsItem, pu
 {
   Q_OBJECT
 public:
-  void setLocked(bool locked); // function to set the lock status of the connection
-  virtual void setShow(bool show); // function to set the state whether to show control points of the connection
-  void createBezierPointItem();    // function to create control points for the bezier curve
+
+    /**
+     * @brief Locks or unlocks the connection.
+     * When locked, the connection cannot be moved.
+     * @param locked New lock state.
+     */
+  void setLocked(bool locked);
+
+    /**
+     * @brief Sets whether the bezier control points are visible.
+     * @param show True to show control points, false to hide.
+     */
+  virtual void setShow(bool show);
+
+    /**
+     * @brief Creates the Bezier control points for the curve.
+     * Adds CQBezierPointItem objects to the scene for each relevant
+     * control point in the curve.
+     */
+  void createBezierPointItem();
+
+    /**
+     * @brief Generates Bezier points from the current QPainterPath.
+     */
   void createBezierPointsFromPainterPath();
+
+    /**
+     * @brief Maps the created Bezier points to the underlying model curve. (once it works)
+     */
   void mapBezierPointsToModelCurve();
+
+    /**
+     * @brief Removes all Bezier control points from the scene.
+     * Deletes all CQBezierPointItem objects associated with this connection.
+     */
   void removeAllBezierPoints();
+
+    /**
+     * @brief Returns a reference to the list of Bezier points.
+     * @return Vector of pointers to CQBezierPointItem objects.
+     */
   std::vector< CQBezierPointItem * > & getBezierPoints();
+
+    /**
+     * @brief Returns the first QGraphicsPathItem child of this item.
+     * @return Pointer to the path item or nullptr if none exists.
+     */
   QGraphicsPathItem * getPathItem() const;
 
   CQConnectionGraphicsItem(const CLGlyphWithCurve * glyph, const CLRenderResolver * resolver = NULL);
@@ -45,18 +85,35 @@ public:
   virtual QPainterPath shape() const;
   void setUseFullShape(bool useFullShape);
 protected:
-  virtual void paint(QPainter * painter, const QStyleOptionGraphicsItem * option = new QStyleOptionGraphicsItem(), QWidget * widget = 0); // paint function for lock status
-  void contextMenuEvent(QGraphicsSceneContextMenuEvent * event); // right click menu
+
+    /**
+     * @brief Paints the connection graphics item.
+     * 
+     * This method first calls the base class paint function to draw all child
+     * items (lines and paths) of the connection. If the connection is locked,
+     * it overlays the curves and lines in red to visually indicate the locked
+     * state.
+     * @param painter The QPainter used to render the item.
+     * @param option  Provides style options for the item (e.g., selection state).
+     * @param widget  Optional widget on which the item is being painted (may be nullptr).
+     */
+  virtual void paint(QPainter * painter, const QStyleOptionGraphicsItem * option = new QStyleOptionGraphicsItem(), QWidget * widget = 0);
+
+    /**
+     * @brief Handles context menu events (right-click).
+     * Provides actions for locking/unlocking connections and showing/hiding control points.
+     */
+  void contextMenuEvent(QGraphicsSceneContextMenuEvent * event);
   void mouseReleaseEvent(QGraphicsSceneMouseEvent* event);
-  virtual QVariant itemChange(GraphicsItemChange change, const QVariant & value); // value is new position
+  virtual QVariant itemChange(GraphicsItemChange change, const QVariant & value);
   bool mWasMoved;
   bool mUseFullShape;
   QPainterPath mShape;
   QPainterPath mFullShape;
 
 private:
-  std::vector< CQBezierPointItem * > mBezierPoints; // list of control points for the bezier curve
-  std::vector< std::pair< QGraphicsPathItem *, const CLCurve * > > mCurveItems;
+  std::vector< CQBezierPointItem * > mBezierPoints; ///< List of bezier control points
+  // std::vector< std::pair< QGraphicsPathItem *, const CLCurve * > > mCurveItems; ///< Map of path items to model curves
 };
 
 #endif

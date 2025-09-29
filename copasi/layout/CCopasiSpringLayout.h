@@ -162,6 +162,18 @@ public:
     Parameters* mParams = NULL
   );
 
+  /**
+   * @brief Adds glyphs for the given side metabolites to the layout.
+   *
+   * The function iterates through reactions, and for each substrate, product,
+   * or modifier found in @p sideMetabs, it creates a duplicate metabolite glyph
+   * (and corresponding text glyph) in @p pResult. Finally, the layout is
+   * randomized and resized to fit the new elements.
+   *
+   * @param pResult    [out] Pointer to the layout that will be updated.
+   * @param sideMetabs [in]  Set of side metabolites to be duplicated.
+   * @param mParams    [in]  Optional glyph parameters (default: NULL).
+   */
   void addSideMetabs(
     CLayout * pResult, const std::set< const CMetab * > & sideMetabs,
     Parameters * mParams = NULL);

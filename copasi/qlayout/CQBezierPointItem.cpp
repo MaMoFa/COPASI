@@ -8,7 +8,7 @@
 CQBezierPointItem::CQBezierPointItem(QGraphicsPathItem * pathItem, CLPoint * modelPoint, const QPointF & pos)
   : QGraphicsEllipseItem(0, 0, 8, 8)
   , mPathItem(pathItem)
-  , mpModelPoint(modelPoint)
+  /*, mpModelPoint(modelPoint)*/
   , mInitialPoint(pos)
 {
     setPos(pos);
@@ -27,11 +27,11 @@ QVariant CQBezierPointItem::itemChange(GraphicsItemChange change, const QVariant
     {
       QPointF newPos = value.toPointF();
 
-      if (mpModelPoint)
+      /*if (mpModelPoint)
         {
           mpModelPoint->setX(newPos.x());
           mpModelPoint->setY(newPos.y());
-        }
+        }*/
 
       if (mPathItem)
         {
@@ -105,12 +105,12 @@ QPointF CQBezierPointItem::getInitialPoint() const
   return mInitialPoint;
 }
 
-CLPoint * CQBezierPointItem::getModelPoint() const
-{
-  return mpModelPoint;
-}
+//CLPoint * CQBezierPointItem::getModelPoint() const
+//{
+//  return mpModelPoint;
+//}
 
-void CQBezierPointItem::setModelPoint(CLPoint * modelPoint)
-{
-  mpModelPoint = modelPoint;
-}
+//void CQBezierPointItem::setModelPoint(CLPoint * modelPoint)
+//{
+//  mpModelPoint = modelPoint;
+//}
